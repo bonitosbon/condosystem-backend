@@ -1,0 +1,26 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+
+# App Settings with Secrets
+appsettings.json
+appsettings.Development.json
+appsettings.Production.json
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.vsidx
+*.vspscc
+
+# Rider
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
