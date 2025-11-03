@@ -1,6 +1,6 @@
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Host=regalia-1987654-mcm-b896.e.aivencloud.com;Port=16297;Database=defaultdb;Username=avnadmin;Password=AVNS_iPZ8biEjD-Zr8BK4OJL;SslMode=Require;"
+    "DefaultConnection": "Host=YOUR-AIVEN-HOST.aivencloud.com;Port=YOUR-PORT;Database=defaultdb;Username=avnadmin;Password=YOUR-PASSWORD;SslMode=Require;"
   },
   "Jwt": {
     "Key": "YourSuperSecretKeyHere_ChangeThis!",
@@ -15,3 +15,4 @@
   },
   "AllowedHosts": "*"
 }
+
