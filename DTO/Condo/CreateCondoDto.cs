@@ -23,8 +23,7 @@ namespace CondoSystem.DTO.Condo
         public string? ImageUrl { get; set; }
         
         [Required]
-        [EmailAddress]
-        public string FrontDeskEmail { get; set; } = string.Empty;
+        public string FrontDeskUsername { get; set; } = string.Empty;
         
         [Required]
         [MinLength(6)]

@@ -31,19 +31,24 @@ namespace CondoSystem.Controllers
             if (await _context.Condos.AnyAsync(c => c.Name == dto.Name && c.Location == dto.Location))
                 return BadRequest(new { message = "Condo already exists at this location." });
 
-            // Check if front desk email is already in use
-            var existingUser = await _userManager.FindByEmailAsync(dto.FrontDeskEmail);
+            // Check if front desk username is already in use
+            var existingUser = await _userManager.FindByNameAsync(dto.FrontDeskUsername);
             if (existingUser != null)
-                return BadRequest(new { message = "Front desk email is already taken." });
+                return BadRequest(new { message = "Front desk username is already taken." });
 
             // Get the logged-in owner's ID
             var ownerId = _userManager.GetUserId(User);
 
             // Create the Front Desk user
+            // Generate email from username for Identity requirement (uses @condosystem.local domain)
+            string frontDeskEmail = dto.FrontDeskUsername.Contains("@") 
+                ? dto.FrontDeskUsername 
+                : $"{dto.FrontDeskUsername}@condosystem.local";
+
             var frontDeskUser = new ApplicationUser
             {
-                UserName = dto.FrontDeskEmail,
-                Email = dto.FrontDeskEmail,
+                UserName = dto.FrontDeskUsername,
+                Email = frontDeskEmail,
                 FullName = $"Front Desk - {dto.Name}"
             };
 
