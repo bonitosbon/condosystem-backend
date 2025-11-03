@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Regalia - Guest Booking</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+
+    <style>
+        .gradient-bg {
+            background: linear-gradient(90deg, #0097b2, #7ed957);
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #0097b2, #7ed957);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .form-input {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .form-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .form-input.invalid {
+            border-color: #ff6b6b;
+            background-color: rgba(255, 107, 107, 0.2);
+        }
+
+        .form-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1em;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .accordion-item {
+            margin-bottom: 1rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .accordion-header {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            color: #ffffff;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .accordion-header:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .accordion-content {
+            padding: 1rem 1.5rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+
+        .accordion-item.active .accordion-content {
+            max-height: 500px;
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+        }
+
+        .accordion-item.active .accordion-header .icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-header .icon {
+            transition: transform 0.3s ease-out;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background-color: rgba(46, 213, 115, 0.2);
+            border: 1px solid rgba(46, 213, 115, 0.5);
+            color: #ffffff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .file-preview {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            display: none;
+        }
+
+        .file-preview.show {
+            display: block;
+        }
+
+        .file-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .property-info {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .property-info h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .property-info p {
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0.25rem 0;
+        }
+
+        .loading-spinner {
+            display: none;
+        }
+
+        .loading-spinner.show {
+            display: inline-block;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#0097b2",
+                        "primary-end": "#7ed957",
+                        "background-light": "#F9FAFB",
+                        "background-dark": "#121212",
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#1E1E1E",
+                        "text-light": "#111827",
+                        "text-dark": "#F9FAFB",
+                        "subtext-light": "#6B7280",
+                        "subtext-dark": "#9CA3AF"
+                    },
+                    fontFamily: {
+                        display: ["Playfair Display", "serif"],
+                        sans: ["Roboto", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.75rem",
+                    },
+                },
+            },
+        };
+
+        // Get token from URL parameter
+        function getTokenFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('token') || params.get('id');
+        }
+
+        // Property data storage (will be fetched from backend later)
+        let propertyData = null;
+        let bookingToken = getTokenFromURL();
+
+        // TODO: Fetch property data from backend when token is available
+        // Example: fetch(`/api/Condo/public/${bookingToken}`)
+        //   .then(response => response.json())
+        //   .then(data => {
+        //       propertyData = data;
+        //       displayPropertyInfo(data);
+        //   });
+    </script>
+</head>
+
+<body class="gradient-bg font-sans text-white">
+    <div class="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8" id="guest-booking">
+        <div class="w-full max-w-4xl">
+            <div class="text-center mb-8">
+                <h1 class="font-display text-5xl text-white">Regalia</h1>
+                <h2 class="text-2xl text-white/90 font-semibold mt-4">Guest Booking Form</h2>
+                <p class="text-white/80 mt-1">Please fill in your details to book a unit.</p>
+            </div>
+
+            <!-- Success Message -->
+            <div class="success-message" id="success-message">
+                <strong>✓ Booking submitted successfully!</strong>
+                <p class="mt-2">Your booking request has been sent. You will receive a confirmation email shortly.</p>
+            </div>
+
+            <!-- Property Info Section (will be populated from backend) -->
+            <div class="property-info" id="property-info" style="display: none;">
+                <h3 id="property-name">Property Name</h3>
+                <p id="property-location">Location</p>
+                <p id="property-price">Price per night</p>
+            </div>
+
+            <div class="bg-white/20 backdrop-blur-xl p-8 rounded-lg shadow-2xl border border-white/30">
+                <form class="space-y-6" id="booking-form" novalidate>
+                    <!-- Guest Details -->
+                    <div class="accordion-item active">
+                        <div class="accordion-header">
+                            <span>Guest Details</span>
+                            <span class="material-icons icon">expand_more</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-white/90 mb-2" for="guest-name">
+                                        Full Name <span class="text-red-300">*</span>
+                                    </label>
+                                    <input 
+                                        class="form-input" 
+                                        id="guest-name" 
+                                        name="guestName"
+                                        placeholder="John Doe" 
+                                        type="text"
+                                        required
+                                    />
+                                    <span class="error-message" id="guest-name-error">Please enter your full name.</span>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-white/90 mb-2" for="guest-email">
+                                        Email <span class="text-red-300">*</span>
+                                    </label>
+                                    <input 
+                                        class="form-input" 
+                                        id="guest-email" 
+                                        name="guestEmail"
+                                        placeholder="john.doe@example.com" 
+                                        type="email"
+                                        required
+                                    />
+                                    <span class="error-message" id="guest-email-error">Please enter a valid email address.</span>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-white/90 mb-2" for="guest-contact">
+                                        Contact Number <span class="text-red-300">*</span>
+                                    </label>
+                                    <input 
+                                        class="form-input" 
+                                        id="guest-contact" 
+                                        name="guestContact"
+                                        placeholder="(123) 456-7890" 
+                                        type="tel"
+                                        required
+                                    />
+                                    <span class="error-message" id="guest-contact-error">Please enter your contact number.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Number of Guests -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <span>Number of Guests</span>
+                            <span class="material-icons icon">expand_more</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div>
+                                <label class="block text-sm font-medium text-white/90 mb-2" for="number-guests">
+                                    Number of Guests <span class="text-red-300">*</span>
+                                </label>
+                                <input 
+                                    class="form-input" 
+                                    id="number-guests" 
+                                    name="numberGuests"
+                                    min="1" 
+                                    max="10"
+                                    placeholder="2" 
+                                    type="number"
+                                    required
+                                />
+                                <span class="error-message" id="number-guests-error">Please enter number of guests (1-10).</span>
+                                <p class="text-white/70 text-sm mt-2">Please enter the total number of guests staying.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Check-in/Check-out Dates -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <span>Select Your Stay Dates</span>
+                            <span class="material-icons icon">expand_more</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="relative">
+                                    <label class="block text-sm font-medium text-white/90 mb-2" for="check-in">
+                                        Check-in Date <span class="text-red-300">*</span>
+                                    </label>
+                                    <input 
+                                        class="form-input" 
+                                        id="check-in" 
+                                        name="checkIn"
+                                        type="date"
+                                        required
+                                    />
+                                    <span class="error-message" id="check-in-error">Please select a check-in date.</span>
+                                    <p class="text-white/70 text-sm mt-2">Select your arrival date</p>
+                                </div>
+                                <div class="relative">
+                                    <label class="block text-sm font-medium text-white/90 mb-2" for="check-out">
+                                        Check-out Date <span class="text-red-300">*</span>
+                                    </label>
+                                    <input 
+                                        class="form-input" 
+                                        id="check-out" 
+                                        name="checkOut"
+                                        type="date"
+                                        required
+                                    />
+                                    <span class="error-message" id="check-out-error">Please select a check-out date.</span>
+                                    <p class="text-white/70 text-sm mt-2">Select your departure date</p>
+                                </div>
+                            </div>
+                            <p class="text-white/80 text-sm mt-4">
+                                <strong>Note:</strong> Your selected dates will be checked against the property's availability. 
+                                If dates are unavailable, the owner will contact you with alternative options.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Special Requests -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">
+                            <span>Special Requests</span>
+                            <span class="material-icons icon">expand_more</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div>
+                                <label class="block text-sm font-medium text-white/90 mb-2" for="special-requests">
+                                    Special Requests
+                                </label>
+                                <textarea 
+                                    class="form-input" 
+                                    id="special-requests" 
+                                    name="specialRequests"
+                                    placeholder="e.g., late check-in, extra towels..." 
+                                    rows="4"
+                                ></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proof of Payment -->
+                    <div class="space-y-4 pt-4">
+                        <h3 class="text-lg font-semibold text-white/90">Proof of Payment</h3>
+                        <div 
+                            class="flex flex-col items-center justify-center p-8 border-2 border-dashed border-white/50 rounded-lg text-center bg-white/10 hover:bg-white/15 transition-colors cursor-pointer"
+                            id="file-upload-area"
+                        >
+                            <span class="material-icons text-5xl text-white/70" id="upload-icon">cloud_upload</span>
+                            <p class="mt-4 text-white/80" id="upload-text">Drag and drop your payment proof image here</p>
+                            <p class="text-sm text-white/60">or</p>
+                            <label 
+                                class="mt-4 px-6 py-2 rounded-lg text-white font-semibold bg-white/20 hover:bg-white/30 transition-colors cursor-pointer" 
+                                for="file-upload"
+                            >
+                                Browse Files
+                                <input 
+                                    accept="image/*" 
+                                    class="sr-only" 
+                                    id="file-upload" 
+                                    name="paymentImage"
+                                    type="file"
+                                />
+                            </label>
+                        </div>
+                        <div class="file-preview" id="file-preview">
+                            <p class="text-white/90 font-medium mb-2">Selected file:</p>
+                            <p class="text-white/80 text-sm" id="file-name"></p>
+                            <img id="file-preview-image" src="" alt="Payment proof preview"/>
+                            <button 
+                                type="button" 
+                                class="mt-2 px-4 py-2 rounded-lg text-white font-semibold bg-red-500/50 hover:bg-red-500/70 transition-colors"
+                                id="remove-file-btn"
+                            >
+                                Remove File
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="flex items-center justify-end pt-4 space-x-4">
+                        <button 
+                            class="px-6 py-2 rounded-lg text-white font-semibold bg-white/20 hover:bg-white/30 transition-colors" 
+                            type="button"
+                            id="cancel-btn"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            class="px-6 py-2 rounded-lg text-white font-semibold bg-primary hover:bg-opacity-80 transition-colors" 
+                            style="background-color: #0097b2;" 
+                            type="submit"
+                            id="submit-btn"
+                        >
+                            <span class="loading-spinner" id="loading-spinner">⏳</span>
+                            <span id="submit-text">Submit Booking</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Accordion functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const accordionItems = document.querySelectorAll('.accordion-item');
+            accordionItems.forEach(item => {
+                const header = item.querySelector('.accordion-header');
+                const content = item.querySelector('.accordion-content');
+
+                // Set initial state for the first item to be open
+                if (item.classList.contains('active')) {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                    content.style.paddingTop = '1.5rem';
+                    content.style.paddingBottom = '1.5rem';
+                }
+
+                header.addEventListener('click', () => {
+                    const isActive = item.classList.contains('active');
+                    
+                    // Close all other active accordions
+                    accordionItems.forEach(otherItem => {
+                        if (otherItem !== item && otherItem.classList.contains('active')) {
+                            otherItem.classList.remove('active');
+                            const otherContent = otherItem.querySelector('.accordion-content');
+                            otherContent.style.maxHeight = '0';
+                            otherContent.style.paddingTop = '0';
+                            otherContent.style.paddingBottom = '0';
+                        }
+                    });
+
+                    // Toggle current accordion
+                    if (isActive) {
+                        item.classList.remove('active');
+                        content.style.maxHeight = '0';
+                        content.style.paddingTop = '0';
+                        content.style.paddingBottom = '0';
+                    } else {
+                        item.classList.add('active');
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        content.style.paddingTop = '1.5rem';
+                        content.style.paddingBottom = '1.5rem';
+                    }
+                });
+            });
+
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('check-in').setAttribute('min', today);
+            document.getElementById('check-out').setAttribute('min', today);
+
+            // Validate check-out is after check-in
+            document.getElementById('check-in').addEventListener('change', function() {
+                const checkInDate = this.value;
+                const checkOutInput = document.getElementById('check-out');
+                if (checkInDate) {
+                    checkOutInput.setAttribute('min', checkInDate);
+                    if (checkOutInput.value && checkOutInput.value <= checkInDate) {
+                        checkOutInput.value = '';
+                    }
+                }
+            });
+
+            // File upload handling
+            const fileUpload = document.getElementById('file-upload');
+            const filePreview = document.getElementById('file-preview');
+            const fileName = document.getElementById('file-name');
+            const filePreviewImage = document.getElementById('file-preview-image');
+            const uploadArea = document.getElementById('file-upload-area');
+            const uploadIcon = document.getElementById('upload-icon');
+            const uploadText = document.getElementById('upload-text');
+            const removeFileBtn = document.getElementById('remove-file-btn');
+
+            // Drag and drop
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('bg-white/20');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('bg-white/20');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('bg-white/20');
+                const files = e.dataTransfer.files;
+                if (files.length > 0 && files[0].type.startsWith('image/')) {
+                    handleFileSelect(files[0]);
+                }
+            });
+
+            fileUpload.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+
+            removeFileBtn.addEventListener('click', () => {
+                fileUpload.value = '';
+                filePreview.classList.remove('show');
+                uploadIcon.textContent = 'cloud_upload';
+                uploadText.textContent = 'Drag and drop your payment proof image here';
+            });
+
+            function handleFileSelect(file) {
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file.');
+                    return;
+                }
+
+                fileName.textContent = file.name;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    filePreviewImage.src = e.target.result;
+                    filePreview.classList.add('show');
+                    uploadIcon.textContent = 'check_circle';
+                    uploadText.textContent = 'File selected: ' + file.name;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Form validation
+            const form = document.getElementById('booking-form');
+            const requiredFields = {
+                'guest-name': 'guest-name-error',
+                'guest-email': 'guest-email-error',
+                'guest-contact': 'guest-contact-error',
+                'number-guests': 'number-guests-error',
+                'check-in': 'check-in-error',
+                'check-out': 'check-out-error'
+            };
+
+            function validateField(fieldId, errorId) {
+                const field = document.getElementById(fieldId);
+                const error = document.getElementById(errorId);
+                let isValid = true;
+
+                if (field.hasAttribute('required') && !field.value.trim()) {
+                    field.classList.add('invalid');
+                    error.classList.add('show');
+                    isValid = false;
+                } else if (field.type === 'email' && field.value && !field.validity.valid) {
+                    field.classList.add('invalid');
+                    error.classList.add('show');
+                    isValid = false;
+                } else if (field.id === 'number-guests') {
+                    const value = parseInt(field.value);
+                    if (isNaN(value) || value < 1 || value > 10) {
+                        field.classList.add('invalid');
+                        error.classList.add('show');
+                        isValid = false;
+                    } else {
+                        field.classList.remove('invalid');
+                        error.classList.remove('show');
+                    }
+                } else if (field.id === 'check-out') {
+                    const checkIn = document.getElementById('check-in').value;
+                    if (field.value && checkIn && field.value <= checkIn) {
+                        field.classList.add('invalid');
+                        error.textContent = 'Check-out date must be after check-in date.';
+                        error.classList.add('show');
+                        isValid = false;
+                    } else {
+                        field.classList.remove('invalid');
+                        error.classList.remove('show');
+                    }
+                } else {
+                    field.classList.remove('invalid');
+                    error.classList.remove('show');
+                }
+
+                return isValid;
+            }
+
+            // Real-time validation
+            Object.keys(requiredFields).forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                field.addEventListener('blur', () => {
+                    validateField(fieldId, requiredFields[fieldId]);
+                });
+                field.addEventListener('input', () => {
+                    if (field.classList.contains('invalid')) {
+                        validateField(fieldId, requiredFields[fieldId]);
+                    }
+                });
+            });
+
+            // Form submission
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Validate all fields
+                let isFormValid = true;
+                Object.keys(requiredFields).forEach(fieldId => {
+                    if (!validateField(fieldId, requiredFields[fieldId])) {
+                        isFormValid = false;
+                    }
+                });
+
+                if (!isFormValid) {
+                    // Scroll to first error
+                    const firstError = document.querySelector('.form-input.invalid');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstError.focus();
+                    }
+                    return;
+                }
+
+                // Get form data
+                const formData = new FormData(form);
+                
+                // Get condoId from propertyData (fetched from token) or use the token itself
+                // TODO: When backend is connected, propertyData will contain the condoId
+                const condoId = propertyData ? propertyData.id : null;
+                
+                // Get submit button elements
+                const submitBtn = document.getElementById('submit-btn');
+                const submitText = document.getElementById('submit-text');
+                const loadingSpinner = document.getElementById('loading-spinner');
+                
+                if (!condoId) {
+                    alert('Property information not found. Please use a valid booking link.');
+                    return;
+                }
+                
+                const bookingData = {
+                    fullName: formData.get('guestName'),
+                    email: formData.get('guestEmail'),
+                    contact: formData.get('guestContact'),
+                    condoId: condoId, // Retrieved from property data based on URL token
+                    guestCount: parseInt(formData.get('numberGuests')),
+                    startDateTime: formData.get('checkIn') + 'T14:00:00', // Default check-in time (2:00 PM)
+                    endDateTime: formData.get('checkOut') + 'T11:00:00', // Default check-out time (11:00 AM)
+                    notes: formData.get('specialRequests') || '',
+                    paymentImage: formData.get('paymentImage')
+                };
+
+                // Show loading state
+                submitBtn.disabled = true;
+                loadingSpinner.classList.add('show');
+                submitText.textContent = 'Submitting...';
+
+                try {
+                    // TODO: Replace with actual API endpoint when backend is connected
+                    // const response = await fetch('/api/Booking/create', {
+                    //     method: 'POST',
+                    //     headers: {
+                    //         'Content-Type': 'application/json'
+                    //     },
+                    //     body: JSON.stringify(bookingData)
+                    // });
+                    
+                    // For now, simulate API call
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    // Show success message
+                    document.getElementById('success-message').classList.add('show');
+                    form.reset();
+                    filePreview.classList.remove('show');
+                    uploadIcon.textContent = 'cloud_upload';
+                    uploadText.textContent = 'Drag and drop your payment proof image here';
+                    
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                    // Reset form state after 5 seconds
+                    setTimeout(() => {
+                        document.getElementById('success-message').classList.remove('show');
+                    }, 5000);
+
+                } catch (error) {
+                    alert('Error submitting booking. Please try again.');
+                    console.error('Booking submission error:', error);
+                } finally {
+                    submitBtn.disabled = false;
+                    loadingSpinner.classList.remove('show');
+                    submitText.textContent = 'Submit Booking';
+                }
+            });
+
+            // Cancel button
+            document.getElementById('cancel-btn').addEventListener('click', () => {
+                if (confirm('Are you sure you want to cancel? All entered data will be lost.')) {
+                    form.reset();
+                    filePreview.classList.remove('show');
+                    uploadIcon.textContent = 'cloud_upload';
+                    uploadText.textContent = 'Drag and drop your payment proof image here';
+                }
+            });
+
+            // Display property info if token is available
+            if (bookingToken) {
+                console.log('Booking token:', bookingToken);
+                // TODO: Fetch property data from backend
+                // Example:
+                // fetch(`/api/Condo/public/${bookingToken}`)
+                //     .then(response => response.json())
+                //     .then(data => {
+                //         propertyData = data; // Store for use in form submission
+                //         document.getElementById('property-name').textContent = data.name;
+                //         document.getElementById('property-location').textContent = data.location;
+                //         document.getElementById('property-price').textContent = `$${data.pricePerNight}/night`;
+                //         document.getElementById('property-info').style.display = 'block';
+                //     })
+                //     .catch(error => {
+                //         console.error('Error fetching property:', error);
+                //         alert('Property not found. Please use a valid booking link.');
+                //     });
+            }
+        });
+    </script>
+</body>
+</html>
+
