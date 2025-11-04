@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CondoSystem_Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3f482f7ef0af8bef50cabd30d4b0c0052f608d9c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+83f4a1668ed0cea645e5dcf6a5d19e9f00c97976")]
 [assembly: System.Reflection.AssemblyProductAttribute("CondoSystem_Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CondoSystem_Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

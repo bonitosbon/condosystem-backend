@@ -1,6 +1,7 @@
 using CondoSystem.Data;
 using CondoSystem.DTO.Booking;
 using CondoSystem.Models;
+using CondoSystem.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,11 +16,19 @@ namespace CondoSystem.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IQrCodeService _qrCodeService;
+        private readonly IEmailService _emailService;
 
-        public BookingController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public BookingController(
+            ApplicationDbContext context, 
+            UserManager<ApplicationUser> userManager,
+            IQrCodeService qrCodeService,
+            IEmailService emailService)
         {
             _context = context;
             _userManager = userManager;
+            _qrCodeService = qrCodeService;
+            _emailService = emailService;
         }
 
         // Public endpoint for guests to create booking requests
@@ -42,27 +51,27 @@ namespace CondoSystem.Controllers
                     return BadRequest(new { message = "Validation failed", errors = errors });
                 }
 
-                // Validate condo exists
-                var condo = await _context.Condos
-                    .FirstOrDefaultAsync(c => c.Id == dto.CondoId);
-                
-                if (condo == null)
+            // Validate condo exists
+            var condo = await _context.Condos
+                .FirstOrDefaultAsync(c => c.Id == dto.CondoId);
+            
+            if (condo == null)
                     return BadRequest(new { message = "Condo not found." });
 
-                // Check if condo is available for the requested dates
-                var conflictingBookings = await _context.Bookings
-                    .Where(b => b.CondoId == dto.CondoId && 
-                               b.Status != "Rejected" && b.Status != "Cancelled" &&
-                               ((b.StartDateTime <= dto.StartDateTime && b.EndDateTime > dto.StartDateTime) ||
-                                (b.StartDateTime < dto.EndDateTime && b.EndDateTime >= dto.EndDateTime) ||
-                                (b.StartDateTime >= dto.StartDateTime && b.EndDateTime <= dto.EndDateTime)))
-                    .ToListAsync();
+            // Check if condo is available for the requested dates
+            var conflictingBookings = await _context.Bookings
+                .Where(b => b.CondoId == dto.CondoId && 
+                           b.Status != "Rejected" && b.Status != "Cancelled" &&
+                           ((b.StartDateTime <= dto.StartDateTime && b.EndDateTime > dto.StartDateTime) ||
+                            (b.StartDateTime < dto.EndDateTime && b.EndDateTime >= dto.EndDateTime) ||
+                            (b.StartDateTime >= dto.StartDateTime && b.EndDateTime <= dto.EndDateTime)))
+                .ToListAsync();
 
-                if (conflictingBookings.Any())
+            if (conflictingBookings.Any())
                     return BadRequest(new { message = "Condo is not available for the selected dates." });
 
-                // Check guest count limit
-                if (dto.GuestCount > condo.MaxGuests)
+            // Check guest count limit
+            if (dto.GuestCount > condo.MaxGuests)
                     return BadRequest(new { message = $"Maximum {condo.MaxGuests} guests allowed for this condo." });
 
                 // Limit PaymentImageUrl size to prevent database issues (PostgreSQL text can be large, but let's be safe)
@@ -106,24 +115,24 @@ namespace CondoSystem.Controllers
                     endDateTime = endDateTime.ToUniversalTime();
                 }
 
-                var booking = new Booking
-                {
+            var booking = new Booking
+            {
                     FullName = dto.FullName ?? string.Empty,
                     Email = dto.Email ?? string.Empty,
                     Contact = dto.Contact ?? string.Empty,
-                    GuestCount = dto.GuestCount,
+                GuestCount = dto.GuestCount,
                     StartDateTime = startDateTime,
                     EndDateTime = endDateTime,
-                    Notes = dto.Notes,
+                Notes = dto.Notes,
                     PaymentImageUrl = paymentImageUrl,
-                    CondoId = dto.CondoId,
-                    Status = "PendingApproval"
-                };
+                CondoId = dto.CondoId,
+                Status = "PendingApproval"
+            };
 
-                _context.Bookings.Add(booking);
-                await _context.SaveChangesAsync();
+            _context.Bookings.Add(booking);
+            await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Booking request created successfully. Awaiting owner approval.", bookingId = booking.Id });
+            return Ok(new { message = "Booking request created successfully. Awaiting owner approval.", bookingId = booking.Id });
             }
             catch (Exception ex)
             {
@@ -208,16 +217,55 @@ namespace CondoSystem.Controllers
                 // Update condo status to occupied
                 booking.Condo.Status = "Occupied";
                 booking.Condo.LastUpdated = DateTime.UtcNow;
+                
+                await _context.SaveChangesAsync();
+
+                // Generate QR code image and send approval email
+                try
+                {
+                    var qrCodeBase64 = _qrCodeService.GenerateQrCodeBase64(qrCodeData);
+                    await _emailService.SendBookingApprovalEmailAsync(
+                        booking.Email,
+                        booking.FullName,
+                        booking.Condo.Name,
+                        booking.Condo.Location,
+                        qrCodeBase64,
+                        booking.Id,
+                        booking.GuestCount,
+                        booking.StartDateTime,
+                        booking.EndDateTime,
+                        booking.Notes
+                    );
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"Error sending approval email: {ex.Message}");
+                    // Don't fail the approval if email fails
+                }
             }
             else
             {
                 booking.Status = "Rejected";
                 booking.RejectionReason = approvalDto.RejectionReason;
-            }
 
             await _context.SaveChangesAsync();
 
-            // TODO: Send email notification to guest with approval/rejection and QR code if approved
+                // Send rejection email
+                try
+                {
+                    await _emailService.SendBookingRejectionEmailAsync(
+                        booking.Email,
+                        booking.FullName,
+                        booking.Condo.Name,
+                        approvalDto.RejectionReason
+                    );
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"Error sending rejection email: {ex.Message}");
+                    // Don't fail the rejection if email fails
+                }
+            }
 
             return Ok(new { 
                 message = approvalDto.IsApproved ? "Booking approved successfully." : "Booking rejected.",

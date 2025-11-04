@@ -21,6 +21,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 
 // ===== Services =====
 builder.Services.AddScoped<IQrCodeService, QrCodeService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // ===== JWT Authentication =====
 builder.Services.AddAuthentication(options =>
