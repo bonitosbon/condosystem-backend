@@ -148,23 +148,6 @@
             margin-top: 0.5rem;
         }
 
-        .property-info {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .property-info h3 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .property-info p {
-            color: rgba(255, 255, 255, 0.9);
-            margin: 0.25rem 0;
-        }
 
         .loading-spinner {
             display: none;
@@ -233,22 +216,24 @@
                 })
                 .catch(error => {
                     console.error('Error fetching condo data:', error);
-                    document.getElementById('property-info').innerHTML = 
-                        '<p class="text-red-300">Error loading property information. Please check the booking link.</p>';
+                    // Show error in the unit overview section instead
+                    const unitOverviewSection = document.getElementById('unit-overview-section');
+                    if (unitOverviewSection) {
+                        unitOverviewSection.innerHTML = '<p class="text-red-300 text-center p-4">Error loading property information. Please check the booking link.</p>';
+                        unitOverviewSection.style.display = 'block';
+                    }
                 });
         } else {
-            document.getElementById('property-info').innerHTML = 
-                '<p class="text-yellow-300">No property specified. Please use a valid booking link.</p>';
+            // Show message in the unit overview section instead
+            const unitOverviewSection = document.getElementById('unit-overview-section');
+            if (unitOverviewSection) {
+                unitOverviewSection.innerHTML = '<p class="text-yellow-300 text-center p-4">No property specified. Please use a valid booking link.</p>';
+                unitOverviewSection.style.display = 'block';
+            }
         }
 
         // Display property information
         function displayPropertyInfo(data) {
-            const propertyInfoDiv = document.getElementById('property-info');
-            document.getElementById('property-name').textContent = data.name || 'Property';
-            document.getElementById('property-location').textContent = `📍 ${data.location || 'Location not specified'}`;
-            document.getElementById('property-price').textContent = `💰 $${data.pricePerNight || 0} per night`;
-            propertyInfoDiv.style.display = 'block';
-            
             // Update unit overview section
             document.getElementById('unit-name').textContent = data.name || 'Unit Name';
             document.getElementById('unit-location').textContent = `Location: ${data.location || 'Not specified'}`;
@@ -305,7 +290,7 @@
                 document.getElementById('unit-dates').textContent = 'Select dates below';
             }
             
-            // Handle images - support up to 3 images (removed second image)
+            // Handle images - support up to 4 images
             const images = [];
             if (data.imageUrl) {
                 images.push(data.imageUrl);
@@ -337,7 +322,7 @@
                 return false;
             }
             
-            // Display images (3 images: main in center, 1 on left, 1 on right - skipping image 2)
+            // Display images (4 images: main in center, 2 on left, 1 on right)
             // Main image in center
             const mainImage = document.getElementById('unit-image-main');
             if (mainImage && images[0] && isValidWebUrl(images[0])) {
@@ -354,36 +339,29 @@
                 console.warn('Main image URL is not web-accessible (local file path):', images[0]);
             }
             
-            // Small images: left side (image 1) and right side (image 3) - skip image 2
-            const image1 = document.getElementById('unit-image-1');
-            if (image1 && images[1] && isValidWebUrl(images[1])) {
-                image1.src = images[1];
-                image1.style.display = 'block';
-                image1.onerror = function() { 
-                    console.error('Failed to load image 1:', images[1]);
-                    this.style.display = 'none'; 
-                };
-                image1.onload = function() {
-                    console.log('Image 1 loaded successfully:', images[1]);
-                };
-            } else if (image1 && images[1]) {
-                console.warn('Image 1 URL is not web-accessible (local file path):', images[1]);
-            }
+            // Small images: left side (image 1, 2) and right side (image 3)
+            const imageElements = [
+                { id: 'unit-image-1', img: images[1] },
+                { id: 'unit-image-2', img: images[2] },
+                { id: 'unit-image-3', img: images[3] }
+            ];
             
-            const image3 = document.getElementById('unit-image-3');
-            if (image3 && images[2] && isValidWebUrl(images[2])) {
-                image3.src = images[2];
-                image3.style.display = 'block';
-                image3.onerror = function() { 
-                    console.error('Failed to load image 3:', images[2]);
-                    this.style.display = 'none'; 
-                };
-                image3.onload = function() {
-                    console.log('Image 3 loaded successfully:', images[2]);
-                };
-            } else if (image3 && images[2]) {
-                console.warn('Image 3 URL is not web-accessible (local file path):', images[2]);
-            }
+            imageElements.forEach((item) => {
+                const element = document.getElementById(item.id);
+                if (element && item.img && isValidWebUrl(item.img)) {
+                    element.src = item.img;
+                    element.style.display = 'block';
+                    element.onerror = function() { 
+                        console.error(`Failed to load ${item.id}:`, item.img);
+                        this.style.display = 'none'; 
+                    };
+                    element.onload = function() {
+                        console.log(`${item.id} loaded successfully:`, item.img);
+                    };
+                } else if (element && item.img) {
+                    console.warn(`${item.id} URL is not web-accessible (local file path):`, item.img);
+                }
+            });
             
             // Show the unit overview section
             const unitOverviewSection = document.getElementById('unit-overview-section');
@@ -409,19 +387,15 @@
                 <p class="mt-2">Your booking request has been sent. You will receive a confirmation email shortly.</p>
             </div>
 
-            <!-- Property Info Section (will be populated from backend) -->
-            <div class="property-info" id="property-info" style="display: none;">
-                <h3 id="property-name">Property Name</h3>
-                <p id="property-location">Location</p>
-                <p id="property-price">Price per night</p>
-            </div>
-
             <div class="bg-white/20 backdrop-blur-xl p-8 rounded-lg shadow-2xl border border-white/30 mb-6" id="unit-overview-section" style="display: none;">
                 <div class="space-y-6 pb-6 border-b border-white/30 mb-6">
-                    <!-- Image Gallery - 3 images only (removed second image) -->
-                    <div class="grid grid-cols-3 gap-4 items-center">
+                    <!-- Image Gallery - 4 images -->
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-4 items-center">
                         <div class="hidden sm:block col-span-1">
                             <img alt="Unit image 1" class="w-full h-24 object-cover rounded-md opacity-70" id="unit-image-1" src="" style="display: none;"/>
+                        </div>
+                        <div class="hidden sm:block col-span-1">
+                            <img alt="Unit image 2" class="w-full h-24 object-cover rounded-md opacity-70" id="unit-image-2" src="" style="display: none;"/>
                         </div>
                         <div class="col-span-3 sm:col-span-1 order-first sm:order-none">
                             <img alt="Main unit image" class="w-full h-48 object-cover rounded-lg" id="unit-image-main" src="" style="display: none;"/>
