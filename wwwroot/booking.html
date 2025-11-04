@@ -305,9 +305,12 @@
                 document.getElementById('unit-dates').textContent = 'Select dates below';
             }
             
-            // Handle images - support up to 4 images
+            // Handle images - support up to 3 images (removed second image)
             const images = [];
-            if (data.imageUrl) images.push(data.imageUrl);
+            if (data.imageUrl) {
+                images.push(data.imageUrl);
+                console.log('Primary image URL:', data.imageUrl);
+            }
             
             // Try to extract additional images from description
             if (data.description) {
@@ -315,33 +318,53 @@
                 if (additionalImagesMatch) {
                     const additionalImages = additionalImagesMatch[1].split(',').map(img => img.trim()).filter(img => img);
                     images.push(...additionalImages);
+                    console.log('Additional images found:', additionalImages);
                 }
             }
             
-            // Display images (limit to 4)
-            // Main image in center, smaller images around it
+            console.log('Total images to display:', images.length, images);
+            
+            // Display images (3 images: main in center, 1 on left, 1 on right - skipping image 2)
+            // Main image in center
             const mainImage = document.getElementById('unit-image-main');
             if (mainImage && images[0]) {
                 mainImage.src = images[0];
                 mainImage.style.display = 'block';
-                mainImage.onerror = function() { this.style.display = 'none'; };
+                mainImage.onerror = function() { 
+                    console.error('Failed to load main image:', images[0]);
+                    this.style.display = 'none'; 
+                };
+                mainImage.onload = function() {
+                    console.log('Main image loaded successfully');
+                };
             }
             
-            // Small images: left side (1, 2) and right side (3)
-            const smallImages = [
-                { id: 'unit-image-1', img: images[1] },
-                { id: 'unit-image-2', img: images[2] },
-                { id: 'unit-image-3', img: images[3] }
-            ];
+            // Small images: left side (image 1) and right side (image 3) - skip image 2
+            const image1 = document.getElementById('unit-image-1');
+            if (image1 && images[1]) {
+                image1.src = images[1];
+                image1.style.display = 'block';
+                image1.onerror = function() { 
+                    console.error('Failed to load image 1:', images[1]);
+                    this.style.display = 'none'; 
+                };
+                image1.onload = function() {
+                    console.log('Image 1 loaded successfully');
+                };
+            }
             
-            smallImages.forEach((item) => {
-                const element = document.getElementById(item.id);
-                if (element && item.img) {
-                    element.src = item.img;
-                    element.style.display = 'block';
-                    element.onerror = function() { this.style.display = 'none'; };
-                }
-            });
+            const image3 = document.getElementById('unit-image-3');
+            if (image3 && images[2]) {
+                image3.src = images[2];
+                image3.style.display = 'block';
+                image3.onerror = function() { 
+                    console.error('Failed to load image 3:', images[2]);
+                    this.style.display = 'none'; 
+                };
+                image3.onload = function() {
+                    console.log('Image 3 loaded successfully');
+                };
+            }
             
             // Show the unit overview section
             const unitOverviewSection = document.getElementById('unit-overview-section');
@@ -376,13 +399,10 @@
 
             <div class="bg-white/20 backdrop-blur-xl p-8 rounded-lg shadow-2xl border border-white/30 mb-6" id="unit-overview-section" style="display: none;">
                 <div class="space-y-6 pb-6 border-b border-white/30 mb-6">
-                    <!-- Image Gallery - 4 images only -->
-                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-4 items-center">
+                    <!-- Image Gallery - 3 images only (removed second image) -->
+                    <div class="grid grid-cols-3 gap-4 items-center">
                         <div class="hidden sm:block col-span-1">
                             <img alt="Unit image 1" class="w-full h-24 object-cover rounded-md opacity-70" id="unit-image-1" src="" style="display: none;"/>
-                        </div>
-                        <div class="hidden sm:block col-span-1">
-                            <img alt="Unit image 2" class="w-full h-24 object-cover rounded-md opacity-70" id="unit-image-2" src="" style="display: none;"/>
                         </div>
                         <div class="col-span-3 sm:col-span-1 order-first sm:order-none">
                             <img alt="Main unit image" class="w-full h-48 object-cover rounded-lg" id="unit-image-main" src="" style="display: none;"/>
