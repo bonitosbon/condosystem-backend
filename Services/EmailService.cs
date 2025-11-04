@@ -140,11 +140,27 @@ namespace CondoSystem.Services
 
                 message.Body = bodyBuilder.ToMessageBody();
 
+                System.Console.WriteLine("Creating SMTP client and connecting...");
                 using var client = new SmtpClient();
+                
+                // Add timeout to prevent hanging (30 seconds)
+                client.Timeout = 30000;
+                
+                System.Console.WriteLine($"Connecting to {smtpHost}:{smtpPort}...");
                 await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
+                System.Console.WriteLine("SMTP connection established.");
+                
+                System.Console.WriteLine("Authenticating...");
                 await client.AuthenticateAsync(smtpUsername, smtpPassword);
+                System.Console.WriteLine("SMTP authentication successful.");
+                
+                System.Console.WriteLine("Sending email message...");
                 await client.SendAsync(message);
+                System.Console.WriteLine("Email message sent.");
+                
+                System.Console.WriteLine("Disconnecting from SMTP server...");
                 await client.DisconnectAsync(true);
+                System.Console.WriteLine("SMTP connection closed.");
 
                 System.Console.WriteLine($"SUCCESS: Booking approval email sent successfully to {toEmail}");
                 System.Console.WriteLine($"Email subject: {message.Subject}");

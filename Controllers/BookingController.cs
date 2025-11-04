@@ -220,65 +220,77 @@ namespace CondoSystem.Controllers
                 
                 await _context.SaveChangesAsync();
 
-                // Generate QR code image and send approval email
-                try
+                // Generate QR code image and send approval email (fire-and-forget - don't block response)
+                // Run in background task so API responds quickly even if email is slow
+                _ = Task.Run(async () =>
                 {
-                    System.Console.WriteLine($"Generating QR code and sending approval email for booking ID: {booking.Id}");
-                    System.Console.WriteLine($"Guest email: {booking.Email}");
-                    System.Console.WriteLine($"Guest name: {booking.FullName}");
-                    
-                    var qrCodeBase64 = _qrCodeService.GenerateQrCodeBase64(qrCodeData);
-                    System.Console.WriteLine($"QR code generated successfully. Length: {qrCodeBase64?.Length ?? 0}");
-                    
-                    await _emailService.SendBookingApprovalEmailAsync(
-                        booking.Email,
-                        booking.FullName,
-                        booking.Condo.Name,
-                        booking.Condo.Location,
-                        qrCodeBase64,
-                        booking.Id,
-                        booking.GuestCount,
-                        booking.StartDateTime,
-                        booking.EndDateTime,
-                        booking.Notes
-                    );
-                    
-                    System.Console.WriteLine($"Email service call completed for booking ID: {booking.Id}");
-                }
-                catch (Exception ex)
-                {
-                    System.Console.WriteLine($"ERROR in approval email process: {ex.Message}");
-                    System.Console.WriteLine($"Error type: {ex.GetType().Name}");
-                    System.Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                    if (ex.InnerException != null)
+                    try
                     {
-                        System.Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                        System.Console.WriteLine($"[BACKGROUND] Generating QR code and sending approval email for booking ID: {booking.Id}");
+                        System.Console.WriteLine($"[BACKGROUND] Guest email: {booking.Email}");
+                        System.Console.WriteLine($"[BACKGROUND] Guest name: {booking.FullName}");
+                        
+                        var qrCodeBase64 = _qrCodeService.GenerateQrCodeBase64(qrCodeData);
+                        System.Console.WriteLine($"[BACKGROUND] QR code generated successfully. Length: {qrCodeBase64?.Length ?? 0}");
+                        
+                        await _emailService.SendBookingApprovalEmailAsync(
+                            booking.Email,
+                            booking.FullName,
+                            booking.Condo.Name,
+                            booking.Condo.Location,
+                            qrCodeBase64,
+                            booking.Id,
+                            booking.GuestCount,
+                            booking.StartDateTime,
+                            booking.EndDateTime,
+                            booking.Notes
+                        );
+                        
+                        System.Console.WriteLine($"[BACKGROUND] Email service call completed for booking ID: {booking.Id}");
                     }
-                    // Don't fail the approval if email fails
-                }
+                    catch (Exception ex)
+                    {
+                        System.Console.WriteLine($"[BACKGROUND] ERROR in approval email process: {ex.Message}");
+                        System.Console.WriteLine($"[BACKGROUND] Error type: {ex.GetType().Name}");
+                        System.Console.WriteLine($"[BACKGROUND] Stack trace: {ex.StackTrace}");
+                        if (ex.InnerException != null)
+                        {
+                            System.Console.WriteLine($"[BACKGROUND] Inner exception: {ex.InnerException.Message}");
+                        }
+                        // Don't fail the approval if email fails
+                    }
+                });
+                
+                System.Console.WriteLine($"Booking approved successfully. Email sending in background for booking ID: {booking.Id}");
             }
             else
             {
                 booking.Status = "Rejected";
                 booking.RejectionReason = approvalDto.RejectionReason;
+                
+                await _context.SaveChangesAsync();
 
-            await _context.SaveChangesAsync();
-
-                // Send rejection email
-                try
+                // Send rejection email (fire-and-forget - don't block response)
+                _ = Task.Run(async () =>
                 {
-                    await _emailService.SendBookingRejectionEmailAsync(
-                        booking.Email,
-                        booking.FullName,
-                        booking.Condo.Name,
-                        approvalDto.RejectionReason
-                    );
-                }
-                catch (Exception ex)
-                {
-                    System.Console.WriteLine($"Error sending rejection email: {ex.Message}");
-                    // Don't fail the rejection if email fails
-                }
+                    try
+                    {
+                        System.Console.WriteLine($"[BACKGROUND] Sending rejection email for booking ID: {booking.Id}");
+                        await _emailService.SendBookingRejectionEmailAsync(
+                            booking.Email,
+                            booking.FullName,
+                            booking.Condo.Name,
+                            approvalDto.RejectionReason
+                        );
+                        System.Console.WriteLine($"[BACKGROUND] Rejection email sent for booking ID: {booking.Id}");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Console.WriteLine($"[BACKGROUND] Error sending rejection email: {ex.Message}");
+                        System.Console.WriteLine($"[BACKGROUND] Stack trace: {ex.StackTrace}");
+                        // Don't fail the rejection if email fails
+                    }
+                });
             }
 
             return Ok(new { 
