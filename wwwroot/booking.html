@@ -1006,14 +1006,20 @@
                     });
                 }
                 
+                // Format dates as ISO 8601 with UTC timezone (Z suffix)
+                const checkInDate = formData.get('checkIn');
+                const checkOutDate = formData.get('checkOut');
+                const startDateTime = checkInDate ? new Date(checkInDate + 'T14:00:00Z').toISOString() : null;
+                const endDateTime = checkOutDate ? new Date(checkOutDate + 'T11:00:00Z').toISOString() : null;
+                
                 const bookingData = {
                     fullName: formData.get('guestName'),
                     email: formData.get('guestEmail'),
                     contact: formData.get('guestContact'),
                     condoId: parseInt(currentCondoId), // Retrieved from URL parameter
                     guestCount: parseInt(formData.get('numberGuests')),
-                    startDateTime: formData.get('checkIn') + 'T14:00:00', // Default check-in time (2:00 PM)
-                    endDateTime: formData.get('checkOut') + 'T11:00:00', // Default check-out time (11:00 AM)
+                    startDateTime: startDateTime, // ISO 8601 format with UTC timezone
+                    endDateTime: endDateTime, // ISO 8601 format with UTC timezone
                     notes: formData.get('specialRequests') || '',
                     paymentImageUrl: paymentImageBase64
                 };
