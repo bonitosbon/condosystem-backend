@@ -214,8 +214,8 @@ namespace CondoSystem.Controllers
                 booking.ApprovedAt = DateTime.UtcNow;
                 booking.ApprovedBy = ownerId;
                 
-                // Update condo status to occupied
-                booking.Condo.Status = "Occupied";
+                // Keep condo status as Available - it will become Occupied only when front desk checks in the guest
+                // booking.Condo.Status = "Occupied"; // Removed - status changes to Occupied on check-in
                 booking.Condo.LastUpdated = DateTime.UtcNow;
                 
                 await _context.SaveChangesAsync();
