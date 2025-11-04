@@ -298,12 +298,40 @@
             }
             
             // Try to extract additional images from description
+            // Base64 images are stored as "Additional Images: data:image/type;base64,xxx, data:image/type;base64,yyy"
+            // We need to parse by finding "data:image/" patterns instead of splitting by comma
             if (data.description) {
                 const additionalImagesMatch = data.description.match(/Additional Images:\s*(.+)/i);
                 if (additionalImagesMatch) {
-                    const additionalImages = additionalImagesMatch[1].split(',').map(img => img.trim()).filter(img => img);
-                    images.push(...additionalImages);
-                    console.log('Additional images found:', additionalImages);
+                    const additionalImagesStr = additionalImagesMatch[1];
+                    // Find all base64 data URIs by matching "data:image/" pattern
+                    // Match pattern: data:image/[type];base64,[base64data]
+                    // Base64 can be very long, so we match until we find ", data:image/" or end of string
+                    const base64ImagePattern = /data:image\/[^;]+;base64,[A-Za-z0-9+\/=\s]+(?=,?\s*(?:data:image\/|$))/g;
+                    let foundImages = [];
+                    let match;
+                    
+                    // Use a more robust approach: split by ", data:image/" pattern
+                    // This ensures we capture complete base64 strings
+                    const parts = additionalImagesStr.split(/,\s*(?=data:image\/)/);
+                    parts.forEach(part => {
+                        const trimmed = part.trim();
+                        if (trimmed.startsWith('data:image/')) {
+                            foundImages.push(trimmed);
+                        }
+                    });
+                    
+                    if (foundImages.length > 0) {
+                        images.push(...foundImages);
+                        console.log('Additional images found:', foundImages.length, foundImages.map((img, i) => `${i+1}: ${img.substring(0, 50)}...`));
+                    } else {
+                        // Fallback: try splitting by comma and space (for old format or non-base64)
+                        const additionalImages = additionalImagesStr.split(',').map(img => img.trim()).filter(img => img && img.length > 0);
+                        if (additionalImages.length > 0) {
+                            images.push(...additionalImages);
+                            console.log('Additional images found (fallback):', additionalImages);
+                        }
+                    }
                 }
             }
             
