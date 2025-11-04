@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 
     <style>
+        /* Input text styling */
         .gradient-bg {
             background: linear-gradient(90deg, #0097b2, #7ed957);
         }
@@ -19,29 +20,92 @@
             -webkit-text-fill-color: transparent;
         }
 
-        .form-input {
-            background-color: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #ffffff;
+        /* Input text color - white */
+        input, textarea {
+            color: rgba(255, 255, 255, 0.9) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        /* Form input styling */
+        .form-input,
+        input.form-input,
+        input[type="text"].form-input,
+        input[type="email"].form-input,
+        input[type="tel"].form-input,
+        input[type="number"].form-input,
+        input[type="date"].form-input,
+        textarea.form-input,
+        input#guest-name,
+        input#guest-email,
+        input#guest-contact,
+        input#number-guests,
+        input#check-in,
+        input#check-out,
+        textarea#special-requests {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
             border-radius: 0.5rem;
             padding: 0.75rem 1rem;
             width: 100%;
             transition: all 0.2s ease-in-out;
         }
 
-        .form-input:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
-            background-color: rgba(255, 255, 255, 0.3);
+        .form-input:focus,
+        input.form-input:focus,
+        input[type="text"].form-input:focus,
+        input[type="email"].form-input:focus,
+        input[type="tel"].form-input:focus,
+        input[type="number"].form-input:focus,
+        input[type="date"].form-input:focus,
+        textarea.form-input:focus {
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5) !important;
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .form-input:active,
+        input.form-input:active,
+        textarea.form-input:active {
+            color: rgba(255, 255, 255, 0.9) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .form-input:not(:placeholder-shown),
+        input.form-input:not(:placeholder-shown),
+        textarea.form-input:not(:placeholder-shown) {
+            color: rgba(255, 255, 255, 0.9) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .form-input:-webkit-autofill,
+        .form-input:-webkit-autofill:hover,
+        .form-input:-webkit-autofill:focus,
+        .form-input:-webkit-autofill:active,
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
+            -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.1) inset !important;
+            box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.1) inset !important;
+            color: rgba(255, 255, 255, 0.9) !important;
         }
 
         .form-input::placeholder {
             color: rgba(255, 255, 255, 0.7);
         }
 
-        .form-input.invalid {
-            border-color: #ff6b6b;
-            background-color: rgba(255, 107, 107, 0.2);
+        .form-input.invalid,
+        input.form-input.invalid,
+        textarea.form-input.invalid {
+            border-color: #ff6b6b !important;
+            background-color: rgba(255, 107, 107, 0.2) !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
         }
 
         .form-select {
@@ -846,6 +910,7 @@
                 });
             });
 
+
             // Form submission
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -987,4 +1052,5 @@
     </script>
 </body>
 </html>
+
 
