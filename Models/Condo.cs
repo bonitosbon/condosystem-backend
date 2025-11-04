@@ -24,6 +24,9 @@ public class Condo
 
     // Optional: if you really need a unique reference code for condos, keep this
     public string UniqueCode { get; set; } = Guid.NewGuid().ToString();
+    
+    // Booking link for guest booking page
+    public string? BookingLink { get; set; }
 
     // Status: Available, Occupied, Maintenance, Unavailable
     public string Status { get; set; } = "Available";

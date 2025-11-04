@@ -76,6 +76,12 @@ namespace CondoSystem.Controllers
             _context.Condos.Add(condo);
             await _context.SaveChangesAsync();
 
+            // Generate booking link after we have the condo ID
+            var request = HttpContext.Request;
+            var baseUrl = $"{request.Scheme}://{request.Host}";
+            condo.BookingLink = $"{baseUrl}/booking.html?condoId={condo.Id}";
+            await _context.SaveChangesAsync();
+
             return Ok(new { message = "Condo and Front Desk created successfully", condo });
         }
 
@@ -99,6 +105,7 @@ namespace CondoSystem.Controllers
                     c.PricePerNight,
                     c.Status,
                     c.ImageUrl,
+                    c.BookingLink,
                     c.CreatedAt,
                     c.LastUpdated,
                     FrontDesk = new
@@ -206,6 +213,14 @@ namespace CondoSystem.Controllers
             if (dto.MaxGuests.HasValue && dto.MaxGuests > 0) condo.MaxGuests = dto.MaxGuests.Value;
             if (dto.PricePerNight.HasValue && dto.PricePerNight >= 0) condo.PricePerNight = dto.PricePerNight.Value;
             if (!string.IsNullOrEmpty(dto.ImageUrl)) condo.ImageUrl = dto.ImageUrl;
+            
+            // Ensure booking link is set (generate if missing)
+            if (string.IsNullOrEmpty(condo.BookingLink))
+            {
+                var request = HttpContext.Request;
+                var baseUrl = $"{request.Scheme}://{request.Host}";
+                condo.BookingLink = $"{baseUrl}/booking.html?condoId={condo.Id}";
+            }
             
             condo.LastUpdated = DateTime.UtcNow;
 

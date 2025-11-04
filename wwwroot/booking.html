@@ -208,23 +208,113 @@
             },
         };
 
-        // Get token from URL parameter
-        function getTokenFromURL() {
+        // Get condo ID from URL parameter
+        function getCondoIdFromURL() {
             const params = new URLSearchParams(window.location.search);
-            return params.get('token') || params.get('id');
+            return params.get('condoId');
         }
 
-        // Property data storage (will be fetched from backend later)
+        // Property data storage
         let propertyData = null;
-        let bookingToken = getTokenFromURL();
+        let condoId = getCondoIdFromURL();
 
-        // TODO: Fetch property data from backend when token is available
-        // Example: fetch(`/api/Condo/public/${bookingToken}`)
-        //   .then(response => response.json())
-        //   .then(data => {
-        //       propertyData = data;
-        //       displayPropertyInfo(data);
-        //   });
+        // Fetch property data from backend
+        if (condoId) {
+            fetch(`/api/Condo/public/${condoId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Condo not found');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    propertyData = data;
+                    displayPropertyInfo(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching condo data:', error);
+                    document.getElementById('property-info').innerHTML = 
+                        '<p class="text-red-300">Error loading property information. Please check the booking link.</p>';
+                });
+        } else {
+            document.getElementById('property-info').innerHTML = 
+                '<p class="text-yellow-300">No property specified. Please use a valid booking link.</p>';
+        }
+
+        // Display property information
+        function displayPropertyInfo(data) {
+            const propertyInfoDiv = document.getElementById('property-info');
+            document.getElementById('property-name').textContent = data.name || 'Property';
+            document.getElementById('property-location').textContent = `📍 ${data.location || 'Location not specified'}`;
+            document.getElementById('property-price').textContent = `💰 $${data.pricePerNight || 0} per night`;
+            propertyInfoDiv.style.display = 'block';
+            
+            // Update unit overview section
+            document.getElementById('unit-name').textContent = data.name || 'Unit Name';
+            document.getElementById('unit-location').textContent = `Location: ${data.location || 'Not specified'}`;
+            document.getElementById('unit-price').textContent = `Price: $${data.pricePerNight || 0}/night`;
+            
+            // Extract room type from description if available
+            let roomType = 'Not specified';
+            if (data.description) {
+                const roomTypeMatch = data.description.match(/Room Type:\s*([^-|]+)/i);
+                if (roomTypeMatch) {
+                    roomType = roomTypeMatch[1].trim();
+                }
+            }
+            document.getElementById('unit-room-type').textContent = `Room Type: ${roomType}`;
+            
+            // Set description
+            let description = data.description || 'Not specified';
+            // Remove room type prefix if present
+            description = description.replace(/Room Type:\s*[^-|]+[-|]?\s*/i, '').trim();
+            // Remove check-in/out if present
+            description = description.replace(/Check-in:.*?Check-out:.*?\|?\s*/i, '').trim();
+            // Remove additional images prefix if present
+            description = description.replace(/Additional Images:.*/i, '').trim();
+            document.getElementById('unit-description').textContent = description || 'Not specified';
+            
+            // Set rules/amenities
+            document.getElementById('unit-rules').textContent = data.amenities || 'Not specified';
+            
+            // Set dates placeholder (will be filled by user)
+            document.getElementById('unit-dates').textContent = 'Select dates below';
+            
+            // Handle images - support up to 4 images
+            const images = [];
+            if (data.imageUrl) images.push(data.imageUrl);
+            
+            // Try to extract additional images from description
+            if (data.description) {
+                const additionalImagesMatch = data.description.match(/Additional Images:\s*(.+)/i);
+                if (additionalImagesMatch) {
+                    const additionalImages = additionalImagesMatch[1].split(',').map(img => img.trim()).filter(img => img);
+                    images.push(...additionalImages);
+                }
+            }
+            
+            // Display images (limit to 4)
+            const imageElements = [
+                { id: 'unit-image-1', display: images[0] || images[1] },
+                { id: 'unit-image-2', display: images[1] || images[2] },
+                { id: 'unit-image-main', display: images[0] },
+                { id: 'unit-image-3', display: images[2] || images[3] }
+            ];
+            
+            imageElements.forEach((img, index) => {
+                const element = document.getElementById(img.id);
+                if (element && img.display) {
+                    element.src = img.display;
+                    element.style.display = 'block';
+                }
+            });
+            
+            // Show the unit overview section
+            const unitOverviewSection = document.getElementById('unit-overview-section');
+            if (unitOverviewSection) {
+                unitOverviewSection.style.display = 'block';
+            }
+        }
     </script>
 </head>
 
@@ -248,6 +338,41 @@
                 <h3 id="property-name">Property Name</h3>
                 <p id="property-location">Location</p>
                 <p id="property-price">Price per night</p>
+            </div>
+
+            <div class="bg-white/20 backdrop-blur-xl p-8 rounded-lg shadow-2xl border border-white/30 mb-6" id="unit-overview-section" style="display: none;">
+                <div class="space-y-6 pb-6 border-b border-white/30 mb-6">
+                    <h3 class="text-2xl font-semibold text-white/90 text-center">Selected Unit Overview</h3>
+                    
+                    <!-- Image Gallery - 4 images only -->
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-4 items-center">
+                        <div class="hidden sm:block col-span-1">
+                            <img alt="Unit image 1" class="w-full h-24 object-cover rounded-md opacity-70" id="unit-image-1" src="" style="display: none;"/>
+                        </div>
+                        <div class="hidden sm:block col-span-1">
+                            <img alt="Unit image 2" class="w-full h-24 object-cover rounded-md opacity-70" id="unit-image-2" src="" style="display: none;"/>
+                        </div>
+                        <div class="col-span-3 sm:col-span-1 order-first sm:order-none">
+                            <img alt="Main unit image" class="w-full h-48 object-cover rounded-lg shadow-lg" id="unit-image-main" src="" style="display: none;"/>
+                        </div>
+                        <div class="hidden sm:block col-span-1">
+                            <img alt="Unit image 3" class="w-full h-24 object-cover rounded-md opacity-70" id="unit-image-3" src="" style="display: none;"/>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center space-y-2">
+                        <h4 class="text-3xl font-display text-white" id="unit-name">Unit Name</h4>
+                        <p class="text-white/80 text-lg" id="unit-location">Location: Not specified</p>
+                        <p class="text-white/80 text-lg" id="unit-price">Price: Not specified</p>
+                        <p class="text-white/80 text-lg" id="unit-room-type">Room Type: Not specified</p>
+                    </div>
+                    
+                    <div class="text-white/70 text-sm md:text-base text-center max-w-2xl mx-auto">
+                        <p class="mb-2"><strong>Check-in/Check-out:</strong> <span id="unit-dates">Not specified</span></p>
+                        <p class="mb-2"><strong>Description:</strong> <span id="unit-description">Not specified</span></p>
+                        <p><strong>Rules:</strong> <span id="unit-rules">Not specified</span></p>
+                    </div>
+                </div>
             </div>
 
             <div class="bg-white/20 backdrop-blur-xl p-8 rounded-lg shadow-2xl border border-white/30">
@@ -673,16 +798,15 @@
                 // Get form data
                 const formData = new FormData(form);
                 
-                // Get condoId from propertyData (fetched from token) or use the token itself
-                // TODO: When backend is connected, propertyData will contain the condoId
-                const condoId = propertyData ? propertyData.id : null;
+                // Get condoId from URL parameter (already set at page load)
+                const currentCondoId = condoId || (propertyData ? propertyData.id : null);
                 
                 // Get submit button elements
                 const submitBtn = document.getElementById('submit-btn');
                 const submitText = document.getElementById('submit-text');
                 const loadingSpinner = document.getElementById('loading-spinner');
                 
-                if (!condoId) {
+                if (!currentCondoId) {
                     alert('Property information not found. Please use a valid booking link.');
                     return;
                 }
@@ -691,7 +815,7 @@
                     fullName: formData.get('guestName'),
                     email: formData.get('guestEmail'),
                     contact: formData.get('guestContact'),
-                    condoId: condoId, // Retrieved from property data based on URL token
+                    condoId: parseInt(currentCondoId), // Retrieved from URL parameter
                     guestCount: parseInt(formData.get('numberGuests')),
                     startDateTime: formData.get('checkIn') + 'T14:00:00', // Default check-in time (2:00 PM)
                     endDateTime: formData.get('checkOut') + 'T11:00:00', // Default check-out time (11:00 AM)
