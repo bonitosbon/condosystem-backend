@@ -256,29 +256,54 @@
             
             // Extract room type from description if available
             let roomType = 'Not specified';
+            let checkInTime = '';
+            let checkOutTime = '';
+            let cleanDescription = '';
+            
             if (data.description) {
+                // Extract room type
                 const roomTypeMatch = data.description.match(/Room Type:\s*([^-|]+)/i);
                 if (roomTypeMatch) {
                     roomType = roomTypeMatch[1].trim();
                 }
+                
+                // Extract check-in time
+                const checkInMatch = data.description.match(/Check-in:\s*([^|]+)/i);
+                if (checkInMatch) {
+                    checkInTime = checkInMatch[1].trim();
+                }
+                
+                // Extract check-out time
+                const checkOutMatch = data.description.match(/Check-out:\s*([^|]+)/i);
+                if (checkOutMatch) {
+                    checkOutTime = checkOutMatch[1].trim();
+                }
+                
+                // Clean description - remove all metadata
+                cleanDescription = data.description
+                    .replace(/Room Type:\s*[^-|]+[-|]?\s*/i, '') // Remove room type
+                    .replace(/Check-in:[^|]*\|?\s*/i, '') // Remove check-in
+                    .replace(/Check-out:[^|]*\|?\s*/i, '') // Remove check-out
+                    .replace(/Additional Images:.*/i, '') // Remove additional images
+                    .replace(/^\s*[-|]\s*/, '') // Remove leading dash/pipe
+                    .replace(/\s*[-|]\s*$/, '') // Remove trailing dash/pipe
+                    .trim();
             }
+            
             document.getElementById('unit-room-type').textContent = `Room Type: ${roomType}`;
-            
-            // Set description
-            let description = data.description || 'Not specified';
-            // Remove room type prefix if present
-            description = description.replace(/Room Type:\s*[^-|]+[-|]?\s*/i, '').trim();
-            // Remove check-in/out if present
-            description = description.replace(/Check-in:.*?Check-out:.*?\|?\s*/i, '').trim();
-            // Remove additional images prefix if present
-            description = description.replace(/Additional Images:.*/i, '').trim();
-            document.getElementById('unit-description').textContent = description || 'Not specified';
-            
-            // Set rules/amenities
+            document.getElementById('unit-description').textContent = cleanDescription || 'Not specified';
             document.getElementById('unit-rules').textContent = data.amenities || 'Not specified';
             
-            // Set dates placeholder (will be filled by user)
-            document.getElementById('unit-dates').textContent = 'Select dates below';
+            // Set check-in/check-out times
+            if (checkInTime && checkOutTime) {
+                document.getElementById('unit-dates').textContent = `Check-in: ${checkInTime} | Check-out: ${checkOutTime}`;
+            } else if (checkInTime) {
+                document.getElementById('unit-dates').textContent = `Check-in: ${checkInTime}`;
+            } else if (checkOutTime) {
+                document.getElementById('unit-dates').textContent = `Check-out: ${checkOutTime}`;
+            } else {
+                document.getElementById('unit-dates').textContent = 'Select dates below';
+            }
             
             // Handle images - support up to 4 images
             const images = [];
@@ -294,18 +319,27 @@
             }
             
             // Display images (limit to 4)
-            const imageElements = [
-                { id: 'unit-image-1', display: images[0] || images[1] },
-                { id: 'unit-image-2', display: images[1] || images[2] },
-                { id: 'unit-image-main', display: images[0] },
-                { id: 'unit-image-3', display: images[2] || images[3] }
+            // Main image in center, smaller images around it
+            const mainImage = document.getElementById('unit-image-main');
+            if (mainImage && images[0]) {
+                mainImage.src = images[0];
+                mainImage.style.display = 'block';
+                mainImage.onerror = function() { this.style.display = 'none'; };
+            }
+            
+            // Small images: left side (1, 2) and right side (3)
+            const smallImages = [
+                { id: 'unit-image-1', img: images[1] },
+                { id: 'unit-image-2', img: images[2] },
+                { id: 'unit-image-3', img: images[3] }
             ];
             
-            imageElements.forEach((img, index) => {
-                const element = document.getElementById(img.id);
-                if (element && img.display) {
-                    element.src = img.display;
+            smallImages.forEach((item) => {
+                const element = document.getElementById(item.id);
+                if (element && item.img) {
+                    element.src = item.img;
                     element.style.display = 'block';
+                    element.onerror = function() { this.style.display = 'none'; };
                 }
             });
             
@@ -342,8 +376,6 @@
 
             <div class="bg-white/20 backdrop-blur-xl p-8 rounded-lg shadow-2xl border border-white/30 mb-6" id="unit-overview-section" style="display: none;">
                 <div class="space-y-6 pb-6 border-b border-white/30 mb-6">
-                    <h3 class="text-2xl font-semibold text-white/90 text-center">Selected Unit Overview</h3>
-                    
                     <!-- Image Gallery - 4 images only -->
                     <div class="grid grid-cols-3 sm:grid-cols-4 gap-4 items-center">
                         <div class="hidden sm:block col-span-1">
@@ -353,7 +385,7 @@
                             <img alt="Unit image 2" class="w-full h-24 object-cover rounded-md opacity-70" id="unit-image-2" src="" style="display: none;"/>
                         </div>
                         <div class="col-span-3 sm:col-span-1 order-first sm:order-none">
-                            <img alt="Main unit image" class="w-full h-48 object-cover rounded-lg shadow-lg" id="unit-image-main" src="" style="display: none;"/>
+                            <img alt="Main unit image" class="w-full h-48 object-cover rounded-lg" id="unit-image-main" src="" style="display: none;"/>
                         </div>
                         <div class="hidden sm:block col-span-1">
                             <img alt="Unit image 3" class="w-full h-24 object-cover rounded-md opacity-70" id="unit-image-3" src="" style="display: none;"/>
