@@ -33,9 +33,15 @@ namespace CondoSystem.Services
 
                 if (string.IsNullOrEmpty(smtpUsername) || string.IsNullOrEmpty(smtpPassword))
                 {
-                    System.Console.WriteLine("Email configuration is missing. Email will not be sent.");
+                    System.Console.WriteLine("ERROR: Email configuration is missing. Email will not be sent.");
+                    System.Console.WriteLine($"SmtpUsername: {(string.IsNullOrEmpty(smtpUsername) ? "NULL" : "SET")}");
+                    System.Console.WriteLine($"SmtpPassword: {(string.IsNullOrEmpty(smtpPassword) ? "NULL" : "SET")}");
                     return;
                 }
+                
+                System.Console.WriteLine($"Attempting to send approval email to: {toEmail}");
+                System.Console.WriteLine($"Using SMTP: {smtpHost}:{smtpPort}");
+                System.Console.WriteLine($"From: {fromEmail} ({fromName})");
 
                 var message = new MimeMessage();
                 message.From.Add(new MailboxAddress(fromName, fromEmail));
@@ -140,12 +146,18 @@ namespace CondoSystem.Services
                 await client.SendAsync(message);
                 await client.DisconnectAsync(true);
 
-                System.Console.WriteLine($"Booking approval email sent successfully to {toEmail}");
+                System.Console.WriteLine($"SUCCESS: Booking approval email sent successfully to {toEmail}");
+                System.Console.WriteLine($"Email subject: {message.Subject}");
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"Error sending booking approval email: {ex.Message}");
+                System.Console.WriteLine($"ERROR sending booking approval email: {ex.Message}");
+                System.Console.WriteLine($"Error type: {ex.GetType().Name}");
                 System.Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
                 // Don't throw - we don't want email failures to break the booking approval
             }
         }

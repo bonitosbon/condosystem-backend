@@ -223,7 +223,13 @@ namespace CondoSystem.Controllers
                 // Generate QR code image and send approval email
                 try
                 {
+                    System.Console.WriteLine($"Generating QR code and sending approval email for booking ID: {booking.Id}");
+                    System.Console.WriteLine($"Guest email: {booking.Email}");
+                    System.Console.WriteLine($"Guest name: {booking.FullName}");
+                    
                     var qrCodeBase64 = _qrCodeService.GenerateQrCodeBase64(qrCodeData);
+                    System.Console.WriteLine($"QR code generated successfully. Length: {qrCodeBase64?.Length ?? 0}");
+                    
                     await _emailService.SendBookingApprovalEmailAsync(
                         booking.Email,
                         booking.FullName,
@@ -236,10 +242,18 @@ namespace CondoSystem.Controllers
                         booking.EndDateTime,
                         booking.Notes
                     );
+                    
+                    System.Console.WriteLine($"Email service call completed for booking ID: {booking.Id}");
                 }
                 catch (Exception ex)
                 {
-                    System.Console.WriteLine($"Error sending approval email: {ex.Message}");
+                    System.Console.WriteLine($"ERROR in approval email process: {ex.Message}");
+                    System.Console.WriteLine($"Error type: {ex.GetType().Name}");
+                    System.Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                    if (ex.InnerException != null)
+                    {
+                        System.Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    }
                     // Don't fail the approval if email fails
                 }
             }
@@ -399,6 +413,7 @@ namespace CondoSystem.Controllers
                     CheckedInAt = b.CheckedInAt,
                     CheckedOutAt = b.CheckedOutAt,
                     Notes = b.Notes,
+                    PaymentImageUrl = b.PaymentImageUrl,
                     Condo = new CondoSummaryDto
                     {
                         Id = b.Condo.Id,
