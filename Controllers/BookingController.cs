@@ -73,12 +73,19 @@ namespace CondoSystem.Controllers
                 }
 
                 // Convert DateTime to UTC (PostgreSQL requires UTC for timestamp with time zone)
+                // When dates come from JSON, they're Unspecified, so we need to explicitly convert to UTC
                 DateTime startDateTime = dto.StartDateTime;
                 if (startDateTime.Kind == DateTimeKind.Unspecified)
                 {
+                    // Treat as UTC if unspecified (common when deserializing from JSON)
                     startDateTime = DateTime.SpecifyKind(startDateTime, DateTimeKind.Utc);
                 }
                 else if (startDateTime.Kind == DateTimeKind.Local)
+                {
+                    startDateTime = startDateTime.ToUniversalTime();
+                }
+                // Ensure it's UTC (final safety check)
+                if (startDateTime.Kind != DateTimeKind.Utc)
                 {
                     startDateTime = startDateTime.ToUniversalTime();
                 }
@@ -86,9 +93,15 @@ namespace CondoSystem.Controllers
                 DateTime endDateTime = dto.EndDateTime;
                 if (endDateTime.Kind == DateTimeKind.Unspecified)
                 {
+                    // Treat as UTC if unspecified (common when deserializing from JSON)
                     endDateTime = DateTime.SpecifyKind(endDateTime, DateTimeKind.Utc);
                 }
                 else if (endDateTime.Kind == DateTimeKind.Local)
+                {
+                    endDateTime = endDateTime.ToUniversalTime();
+                }
+                // Ensure it's UTC (final safety check)
+                if (endDateTime.Kind != DateTimeKind.Utc)
                 {
                     endDateTime = endDateTime.ToUniversalTime();
                 }
