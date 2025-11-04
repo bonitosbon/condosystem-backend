@@ -200,6 +200,7 @@ namespace CondoSystem.Controllers
 
             // Update only allowed fields
             if (!string.IsNullOrEmpty(dto.Name)) condo.Name = dto.Name;
+            if (!string.IsNullOrEmpty(dto.Location)) condo.Location = dto.Location;
             if (!string.IsNullOrEmpty(dto.Description)) condo.Description = dto.Description;
             if (!string.IsNullOrEmpty(dto.Amenities)) condo.Amenities = dto.Amenities;
             if (dto.MaxGuests.HasValue && dto.MaxGuests > 0) condo.MaxGuests = dto.MaxGuests.Value;
@@ -238,16 +239,45 @@ namespace CondoSystem.Controllers
 
             return Ok(new { message = "Condo status updated successfully", status = condo.Status });
         }
+
+        // Owner: Delete condo
+        [HttpDelete("{condoId}")]
+        [Authorize(Roles = "OWNER")]
+        public async Task<IActionResult> DeleteCondo(int condoId)
+        {
+            var ownerId = _userManager.GetUserId(User);
+            
+            var condo = await _context.Condos
+                .Include(c => c.FrontDeskUser)
+                .FirstOrDefaultAsync(c => c.Id == condoId && c.OwnerId == ownerId);
+
+            if (condo == null)
+                return NotFound("Condo not found or you don't have permission to delete it.");
+
+            // Delete the front desk user associated with this condo
+            if (condo.FrontDeskUser != null)
+            {
+                await _userManager.DeleteAsync(condo.FrontDeskUser);
+            }
+
+            // Delete the condo
+            _context.Condos.Remove(condo);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Condo deleted successfully" });
+        }
     }
 
     public class UpdateCondoDto
     {
         public string? Name { get; set; }
+        public string? Location { get; set; }
         public string? Description { get; set; }
         public string? Amenities { get; set; }
         public int? MaxGuests { get; set; }
         public decimal? PricePerNight { get; set; }
         public string? ImageUrl { get; set; }
+        public string? Status { get; set; } // Status is handled separately via PATCH endpoint
     }
 
     public class UpdateStatusDto

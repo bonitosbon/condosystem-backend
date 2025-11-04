@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CondoSystem_Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4bb6f44bd3ec4947852750282dcb6776a1eebeb9")]
 [assembly: System.Reflection.AssemblyProductAttribute("CondoSystem_Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CondoSystem_Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
