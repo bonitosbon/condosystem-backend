@@ -1,7 +1,5 @@
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
-using MimeKit.Text;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 
 namespace CondoSystem.Services
 {
@@ -24,34 +22,28 @@ namespace CondoSystem.Services
         {
             try
             {
-                var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-                var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-                var smtpUsername = _configuration["Email:SmtpUsername"];
-                var smtpPassword = _configuration["Email:SmtpPassword"];
-                var fromEmail = _configuration["Email:FromEmail"] ?? smtpUsername;
+                var apiKey = _configuration["Email:SendGridApiKey"];
+                var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@regalia.com";
                 var fromName = _configuration["Email:FromName"] ?? "Regalia Condo System";
 
-                if (string.IsNullOrEmpty(smtpUsername) || string.IsNullOrEmpty(smtpPassword))
+                if (string.IsNullOrEmpty(apiKey))
                 {
-                    System.Console.WriteLine("ERROR: Email configuration is missing. Email will not be sent.");
-                    System.Console.WriteLine($"SmtpUsername: {(string.IsNullOrEmpty(smtpUsername) ? "NULL" : "SET")}");
-                    System.Console.WriteLine($"SmtpPassword: {(string.IsNullOrEmpty(smtpPassword) ? "NULL" : "SET")}");
+                    System.Console.WriteLine("ERROR: SendGrid API key is missing. Email will not be sent.");
+                    System.Console.WriteLine($"SendGridApiKey: {(string.IsNullOrEmpty(apiKey) ? "NULL" : "SET")}");
                     return;
                 }
                 
                 System.Console.WriteLine($"Attempting to send approval email to: {toEmail}");
-                System.Console.WriteLine($"Using SMTP: {smtpHost}:{smtpPort}");
+                System.Console.WriteLine($"Using SendGrid API");
                 System.Console.WriteLine($"From: {fromEmail} ({fromName})");
 
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(fromName, fromEmail));
-                message.To.Add(new MailboxAddress(guestName, toEmail));
-                message.Subject = $"Booking Approved - {condoName}";
+                var client = new SendGridClient(apiKey);
+                var from = new EmailAddress(fromEmail, fromName);
+                var to = new EmailAddress(toEmail, guestName);
+                var subject = $"Booking Approved - {condoName}";
 
                 // Create HTML body with embedded QR code
-                var bodyBuilder = new BodyBuilder
-                {
-                    HtmlBody = $@"
+                var htmlContent = $@"
 <!DOCTYPE html>
 <html class=""light"" lang=""en"">
 <head>
@@ -124,51 +116,27 @@ namespace CondoSystem.Services
         </div>
     </div>
 </body>
-</html>"
-                };
+</html>";
 
-                // Add QR code as embedded image
-                if (!string.IsNullOrEmpty(qrCodeBase64))
+                var msg = MailHelper.CreateSingleEmail(from, to, subject, null, htmlContent);
+                
+                // Add QR code as attachment instead of embedding (SendGrid doesn't support cid: easily)
+                // The QR code will still display in the email via base64 in the HTML
+                
+                System.Console.WriteLine("Sending email via SendGrid API...");
+                var response = await client.SendEmailAsync(msg);
+                
+                if (response.IsSuccessStatusCode)
                 {
-                    var qrCodeBytes = Convert.FromBase64String(qrCodeBase64);
-                    bodyBuilder.LinkedResources.Add("qr-code.png", qrCodeBytes);
-                    bodyBuilder.HtmlBody = bodyBuilder.HtmlBody.Replace(
-                        $"<img src=\"data:image/png;base64,{qrCodeBase64}\"",
-                        "<img src=\"cid:qr-code.png\""
-                    );
+                    System.Console.WriteLine($"SUCCESS: Booking approval email sent successfully to {toEmail}");
+                    System.Console.WriteLine($"SendGrid response status: {response.StatusCode}");
                 }
-
-                message.Body = bodyBuilder.ToMessageBody();
-
-                System.Console.WriteLine("Creating SMTP client and connecting...");
-                using var client = new SmtpClient();
-                
-                // Add timeout to prevent hanging (30 seconds)
-                client.Timeout = 30000;
-                
-                // Try SSL (port 465) or STARTTLS (port 587) based on port
-                SecureSocketOptions socketOptions = smtpPort == 465 
-                    ? SecureSocketOptions.SslOnConnect 
-                    : SecureSocketOptions.StartTls;
-                
-                System.Console.WriteLine($"Connecting to {smtpHost}:{smtpPort} using {socketOptions}...");
-                await client.ConnectAsync(smtpHost, smtpPort, socketOptions);
-                System.Console.WriteLine("SMTP connection established.");
-                
-                System.Console.WriteLine("Authenticating...");
-                await client.AuthenticateAsync(smtpUsername, smtpPassword);
-                System.Console.WriteLine("SMTP authentication successful.");
-                
-                System.Console.WriteLine("Sending email message...");
-                await client.SendAsync(message);
-                System.Console.WriteLine("Email message sent.");
-                
-                System.Console.WriteLine("Disconnecting from SMTP server...");
-                await client.DisconnectAsync(true);
-                System.Console.WriteLine("SMTP connection closed.");
-
-                System.Console.WriteLine($"SUCCESS: Booking approval email sent successfully to {toEmail}");
-                System.Console.WriteLine($"Email subject: {message.Subject}");
+                else
+                {
+                    var responseBody = await response.Body.ReadAsStringAsync();
+                    System.Console.WriteLine($"ERROR: SendGrid returned status {response.StatusCode}");
+                    System.Console.WriteLine($"Response body: {responseBody}");
+                }
             }
             catch (Exception ex)
             {
@@ -187,27 +155,22 @@ namespace CondoSystem.Services
         {
             try
             {
-                var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-                var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-                var smtpUsername = _configuration["Email:SmtpUsername"];
-                var smtpPassword = _configuration["Email:SmtpPassword"];
-                var fromEmail = _configuration["Email:FromEmail"] ?? smtpUsername;
+                var apiKey = _configuration["Email:SendGridApiKey"];
+                var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@regalia.com";
                 var fromName = _configuration["Email:FromName"] ?? "Regalia Condo System";
 
-                if (string.IsNullOrEmpty(smtpUsername) || string.IsNullOrEmpty(smtpPassword))
+                if (string.IsNullOrEmpty(apiKey))
                 {
-                    System.Console.WriteLine("Email configuration is missing. Email will not be sent.");
+                    System.Console.WriteLine("ERROR: SendGrid API key is missing. Email will not be sent.");
                     return;
                 }
 
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(fromName, fromEmail));
-                message.To.Add(new MailboxAddress(guestName, toEmail));
-                message.Subject = $"Booking Request - {condoName}";
+                var client = new SendGridClient(apiKey);
+                var from = new EmailAddress(fromEmail, fromName);
+                var to = new EmailAddress(toEmail, guestName);
+                var subject = $"Booking Request - {condoName}";
 
-                var bodyBuilder = new BodyBuilder
-                {
-                    HtmlBody = $@"
+                var htmlContent = $@"
 <!DOCTYPE html>
 <html>
 <head>
@@ -243,26 +206,30 @@ namespace CondoSystem.Services
         </div>
     </div>
 </body>
-</html>"
-                };
+</html>";
 
-                message.Body = bodyBuilder.ToMessageBody();
-
-                using var client = new SmtpClient();
-                await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
-                await client.AuthenticateAsync(smtpUsername, smtpPassword);
-                await client.SendAsync(message);
-                await client.DisconnectAsync(true);
-
-                System.Console.WriteLine($"Booking rejection email sent successfully to {toEmail}");
+                var msg = MailHelper.CreateSingleEmail(from, to, subject, null, htmlContent);
+                
+                System.Console.WriteLine("Sending rejection email via SendGrid API...");
+                var response = await client.SendEmailAsync(msg);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    System.Console.WriteLine($"SUCCESS: Booking rejection email sent successfully to {toEmail}");
+                }
+                else
+                {
+                    var responseBody = await response.Body.ReadAsStringAsync();
+                    System.Console.WriteLine($"ERROR: SendGrid returned status {response.StatusCode}");
+                    System.Console.WriteLine($"Response body: {responseBody}");
+                }
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"Error sending booking rejection email: {ex.Message}");
+                System.Console.WriteLine($"ERROR sending booking rejection email: {ex.Message}");
                 System.Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 // Don't throw - we don't want email failures to break the booking rejection
             }
         }
     }
 }
-

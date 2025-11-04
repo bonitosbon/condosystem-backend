@@ -233,6 +233,12 @@ namespace CondoSystem.Controllers
                         var qrCodeBase64 = _qrCodeService.GenerateQrCodeBase64(qrCodeData);
                         System.Console.WriteLine($"[BACKGROUND] QR code generated successfully. Length: {qrCodeBase64?.Length ?? 0}");
                         
+                        if (string.IsNullOrEmpty(qrCodeBase64))
+                        {
+                            System.Console.WriteLine("[BACKGROUND] WARNING: QR code is empty, cannot send email");
+                            return;
+                        }
+                        
                         await _emailService.SendBookingApprovalEmailAsync(
                             booking.Email,
                             booking.FullName,

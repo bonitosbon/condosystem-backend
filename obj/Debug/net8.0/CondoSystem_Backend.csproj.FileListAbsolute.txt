@@ -132,6 +132,6 @@ C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Bac
 C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Backend\bin\Debug\net8.0\Npgsql.dll
 C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Backend\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
 C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Backend\obj\Debug\net8.0\CondoSystem_Backend.sourcelink.json
-C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Backend\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
-C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Backend\bin\Debug\net8.0\MailKit.dll
-C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Backend\bin\Debug\net8.0\MimeKit.dll
+C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Backend\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Backend\bin\Debug\net8.0\SendGrid.dll
+C:\Users\Admin\OneDrive\Documents\C# PRoject\CondoSystem_Backend\CondoSystem_Backend\bin\Debug\net8.0\StarkbankEcdsa.dll
