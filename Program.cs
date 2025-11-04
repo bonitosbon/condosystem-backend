@@ -79,6 +79,22 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// ===== Apply Database Migrations =====
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    try
+    {
+        await dbContext.Database.MigrateAsync();
+        System.Console.WriteLine("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        System.Console.WriteLine($"Error applying database migrations: {ex.Message}");
+        // Don't throw - allow app to start even if migration fails (might already be applied)
+    }
+}
+
 // ===== Seed Roles =====
 using (var scope = app.Services.CreateScope())
 {
