@@ -27,47 +27,67 @@ namespace CondoSystem.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDto dto)
         {
-            // Validate condo exists
-            var condo = await _context.Condos
-                .FirstOrDefaultAsync(c => c.Id == dto.CondoId);
-            
-            if (condo == null)
-                return BadRequest("Condo not found.");
-
-            // Check if condo is available for the requested dates
-            var conflictingBookings = await _context.Bookings
-                .Where(b => b.CondoId == dto.CondoId && 
-                           b.Status != "Rejected" && b.Status != "Cancelled" &&
-                           ((b.StartDateTime <= dto.StartDateTime && b.EndDateTime > dto.StartDateTime) ||
-                            (b.StartDateTime < dto.EndDateTime && b.EndDateTime >= dto.EndDateTime) ||
-                            (b.StartDateTime >= dto.StartDateTime && b.EndDateTime <= dto.EndDateTime)))
-                .ToListAsync();
-
-            if (conflictingBookings.Any())
-                return BadRequest("Condo is not available for the selected dates.");
-
-            // Check guest count limit
-            if (dto.GuestCount > condo.MaxGuests)
-                return BadRequest($"Maximum {condo.MaxGuests} guests allowed for this condo.");
-
-            var booking = new Booking
+            try
             {
-                FullName = dto.FullName,
-                Email = dto.Email,
-                Contact = dto.Contact,
-                GuestCount = dto.GuestCount,
-                StartDateTime = dto.StartDateTime,
-                EndDateTime = dto.EndDateTime,
-                Notes = dto.Notes,
-                PaymentImageUrl = dto.PaymentImageUrl,
-                CondoId = dto.CondoId,
-                Status = "PendingApproval"
-            };
+                if (dto == null)
+                    return BadRequest("Booking data is required.");
 
-            _context.Bookings.Add(booking);
-            await _context.SaveChangesAsync();
+                // Validate ModelState
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .SelectMany(x => x.Value!.Errors.Select(e => $"{x.Key}: {e.ErrorMessage}"))
+                        .ToList();
+                    return BadRequest(new { message = "Validation failed", errors = errors });
+                }
 
-            return Ok(new { message = "Booking request created successfully. Awaiting owner approval.", bookingId = booking.Id });
+                // Validate condo exists
+                var condo = await _context.Condos
+                    .FirstOrDefaultAsync(c => c.Id == dto.CondoId);
+                
+                if (condo == null)
+                    return BadRequest(new { message = "Condo not found." });
+
+                // Check if condo is available for the requested dates
+                var conflictingBookings = await _context.Bookings
+                    .Where(b => b.CondoId == dto.CondoId && 
+                               b.Status != "Rejected" && b.Status != "Cancelled" &&
+                               ((b.StartDateTime <= dto.StartDateTime && b.EndDateTime > dto.StartDateTime) ||
+                                (b.StartDateTime < dto.EndDateTime && b.EndDateTime >= dto.EndDateTime) ||
+                                (b.StartDateTime >= dto.StartDateTime && b.EndDateTime <= dto.EndDateTime)))
+                    .ToListAsync();
+
+                if (conflictingBookings.Any())
+                    return BadRequest(new { message = "Condo is not available for the selected dates." });
+
+                // Check guest count limit
+                if (dto.GuestCount > condo.MaxGuests)
+                    return BadRequest(new { message = $"Maximum {condo.MaxGuests} guests allowed for this condo." });
+
+                var booking = new Booking
+                {
+                    FullName = dto.FullName,
+                    Email = dto.Email,
+                    Contact = dto.Contact,
+                    GuestCount = dto.GuestCount,
+                    StartDateTime = dto.StartDateTime,
+                    EndDateTime = dto.EndDateTime,
+                    Notes = dto.Notes,
+                    PaymentImageUrl = dto.PaymentImageUrl,
+                    CondoId = dto.CondoId,
+                    Status = "PendingApproval"
+                };
+
+                _context.Bookings.Add(booking);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Booking request created successfully. Awaiting owner approval.", bookingId = booking.Id });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while creating the booking.", error = ex.Message });
+            }
         }
 
         // Owner: Get all pending bookings for their condos

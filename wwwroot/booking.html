@@ -988,8 +988,21 @@
                     });
                     
                     if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorData.title || errorMessage;
+                            // If it's a validation error, show all errors
+                            if (errorData.errors) {
+                                const validationErrors = Object.values(errorData.errors).flat().join(', ');
+                                errorMessage = `Validation errors: ${validationErrors}`;
+                            }
+                        } catch (e) {
+                            // If response is not JSON, try to get text
+                            const text = await response.text().catch(() => '');
+                            if (text) errorMessage = text;
+                        }
+                        throw new Error(errorMessage);
                     }
                     
                     const result = await response.json();
@@ -1010,8 +1023,14 @@
                     }, 5000);
 
                 } catch (error) {
-                    alert('Error submitting booking. Please try again.');
+                    // Show detailed error message
+                    let errorMessage = 'Error submitting booking. Please try again.';
+                    if (error.message) {
+                        errorMessage = `Error: ${error.message}`;
+                    }
+                    alert(errorMessage);
                     console.error('Booking submission error:', error);
+                    console.error('Booking data sent:', bookingData);
                 } finally {
                     submitBtn.disabled = false;
                     loadingSpinner.classList.remove('show');
