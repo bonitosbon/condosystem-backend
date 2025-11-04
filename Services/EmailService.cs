@@ -22,14 +22,29 @@ namespace CondoSystem.Services
         {
             try
             {
-                var apiKey = _configuration["Email:SendGridApiKey"];
+                // Try multiple ways to read the API key (environment variable with __ or : separator)
+                var apiKey = _configuration["Email:SendGridApiKey"] 
+                    ?? _configuration["Email__SendGridApiKey"]
+                    ?? Environment.GetEnvironmentVariable("Email__SendGridApiKey");
+                
+                // Trim whitespace and newlines (in case it was pasted with extra spaces)
+                if (!string.IsNullOrEmpty(apiKey))
+                {
+                    apiKey = apiKey.Trim().Replace("\r", "").Replace("\n", "").Replace(" ", "");
+                }
+                
                 var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@regalia.com";
                 var fromName = _configuration["Email:FromName"] ?? "Regalia Condo System";
+
+                // Debug: Log all configuration values
+                System.Console.WriteLine($"DEBUG: Email:SendGridApiKey = '{_configuration["Email:SendGridApiKey"]}'");
+                System.Console.WriteLine($"DEBUG: Email__SendGridApiKey (env) = '{Environment.GetEnvironmentVariable("Email__SendGridApiKey")}'");
+                System.Console.WriteLine($"DEBUG: Final apiKey (after trim) = '{(string.IsNullOrEmpty(apiKey) ? "NULL" : apiKey.Substring(0, Math.Min(10, apiKey.Length)) + "...")}'");
 
                 if (string.IsNullOrEmpty(apiKey))
                 {
                     System.Console.WriteLine("ERROR: SendGrid API key is missing. Email will not be sent.");
-                    System.Console.WriteLine($"SendGridApiKey: {(string.IsNullOrEmpty(apiKey) ? "NULL" : "SET")}");
+                    System.Console.WriteLine($"SendGridApiKey: NULL");
                     return;
                 }
                 
