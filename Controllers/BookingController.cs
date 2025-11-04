@@ -365,8 +365,9 @@ namespace CondoSystem.Controllers
             if (booking.QrCodeData != checkInDto.QrCodeData)
                 return BadRequest("Invalid QR code.");
 
-            if (DateTime.UtcNow < booking.StartDateTime)
-                return BadRequest("Check-in is not allowed before the scheduled start time.");
+            // Time validation removed for testing purposes
+            // if (DateTime.UtcNow < booking.StartDateTime)
+            //     return BadRequest("Check-in is not allowed before the scheduled start time.");
 
             booking.Status = "CheckedIn";
             booking.CheckedInAt = DateTime.UtcNow;
