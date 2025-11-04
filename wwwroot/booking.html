@@ -884,6 +884,18 @@
                     return;
                 }
                 
+                // Convert payment image to base64 if present
+                let paymentImageBase64 = null;
+                const paymentFile = fileUpload.files[0];
+                if (paymentFile) {
+                    paymentImageBase64 = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result); // This is already a data URL (base64)
+                        reader.onerror = reject;
+                        reader.readAsDataURL(paymentFile);
+                    });
+                }
+                
                 const bookingData = {
                     fullName: formData.get('guestName'),
                     email: formData.get('guestEmail'),
@@ -893,7 +905,7 @@
                     startDateTime: formData.get('checkIn') + 'T14:00:00', // Default check-in time (2:00 PM)
                     endDateTime: formData.get('checkOut') + 'T11:00:00', // Default check-out time (11:00 AM)
                     notes: formData.get('specialRequests') || '',
-                    paymentImage: formData.get('paymentImage')
+                    paymentImageUrl: paymentImageBase64
                 };
 
                 // Show loading state
@@ -902,17 +914,20 @@
                 submitText.textContent = 'Submitting...';
 
                 try {
-                    // TODO: Replace with actual API endpoint when backend is connected
-                    // const response = await fetch('/api/Booking/create', {
-                    //     method: 'POST',
-                    //     headers: {
-                    //         'Content-Type': 'application/json'
-                    //     },
-                    //     body: JSON.stringify(bookingData)
-                    // });
+                    const response = await fetch('/api/Booking/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(bookingData)
+                    });
                     
-                    // For now, simulate API call
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
 
                     // Show success message
                     document.getElementById('success-message').classList.add('show');

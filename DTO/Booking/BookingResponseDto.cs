@@ -17,6 +17,7 @@ namespace CondoSystem.DTO.Booking
         public DateTime? CheckedOutAt { get; set; }
         public string? Notes { get; set; }
         public string? RejectionReason { get; set; }
+        public string? PaymentImageUrl { get; set; }
         public CondoSummaryDto Condo { get; set; } = new();
     }
     

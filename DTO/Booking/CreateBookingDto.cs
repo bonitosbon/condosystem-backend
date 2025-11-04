@@ -27,6 +27,8 @@ namespace CondoSystem.DTO.Booking
         
         public string? Notes { get; set; }
         
+        public string? PaymentImageUrl { get; set; }
+        
         [Required]
         public int CondoId { get; set; }
     }

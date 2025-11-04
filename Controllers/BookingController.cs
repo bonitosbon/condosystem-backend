@@ -59,6 +59,7 @@ namespace CondoSystem.Controllers
                 StartDateTime = dto.StartDateTime,
                 EndDateTime = dto.EndDateTime,
                 Notes = dto.Notes,
+                PaymentImageUrl = dto.PaymentImageUrl,
                 CondoId = dto.CondoId,
                 Status = "PendingApproval"
             };
@@ -91,6 +92,7 @@ namespace CondoSystem.Controllers
                     Status = b.Status,
                     CreatedAt = b.CreatedAt,
                     Notes = b.Notes,
+                    PaymentImageUrl = b.PaymentImageUrl,
                     Condo = new CondoSummaryDto
                     {
                         Id = b.Condo.Id,
