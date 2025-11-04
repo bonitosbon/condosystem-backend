@@ -133,10 +133,49 @@ namespace CondoSystem.Services
 </body>
 </html>";
 
-                var msg = MailHelper.CreateSingleEmail(from, to, subject, null, htmlContent);
+                // Replace base64 image with cid: reference before creating message
+                // (Many email clients block data: URIs for security)
+                string modifiedHtmlContent = htmlContent;
+                if (!string.IsNullOrEmpty(qrCodeBase64))
+                {
+                    modifiedHtmlContent = htmlContent.Replace(
+                        $"<img src=\"data:image/png;base64,{qrCodeBase64}\"",
+                        "<img src=\"cid:qr-code\""
+                    );
+                    System.Console.WriteLine("Updated HTML to use cid:qr-code instead of base64");
+                }
                 
-                // Add QR code as attachment instead of embedding (SendGrid doesn't support cid: easily)
-                // The QR code will still display in the email via base64 in the HTML
+                var msg = MailHelper.CreateSingleEmail(from, to, subject, null, modifiedHtmlContent);
+                
+                // Add QR code as inline attachment with Content-ID so it displays in email
+                if (!string.IsNullOrEmpty(qrCodeBase64))
+                {
+                    try
+                    {
+                        var qrCodeBytes = Convert.FromBase64String(qrCodeBase64);
+                        
+                        // Create attachment with inline disposition and Content-ID
+                        var attachment = new Attachment
+                        {
+                            Content = Convert.ToBase64String(qrCodeBytes),
+                            Filename = "qr-code.png",
+                            Type = "image/png",
+                            Disposition = "inline",
+                            ContentId = "qr-code"
+                        };
+                        
+                        msg.AddAttachment(attachment);
+                        
+                        System.Console.WriteLine($"QR code attached as inline image. Size: {qrCodeBytes.Length} bytes");
+                        System.Console.WriteLine($"Content-ID: qr-code");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Console.WriteLine($"WARNING: Failed to attach QR code: {ex.Message}");
+                        System.Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                        // Continue without attachment - email will still send but without QR code
+                    }
+                }
                 
                 System.Console.WriteLine("Sending email via SendGrid API...");
                 var response = await client.SendEmailAsync(msg);
