@@ -86,7 +86,19 @@ namespace CondoSystem.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while creating the booking.", error = ex.Message });
+                // Log the full exception for debugging
+                System.Console.WriteLine($"Error creating booking: {ex.Message}");
+                System.Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                
+                return StatusCode(500, new { 
+                    message = "An error occurred while creating the booking.", 
+                    error = ex.Message,
+                    details = ex.InnerException?.Message ?? ""
+                });
             }
         }
 

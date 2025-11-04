@@ -42,7 +42,7 @@
         input#check-in,
         input#check-out,
         textarea#special-requests {
-            background-color: rgba(255, 255, 255, 0.1) !important;
+            background-color: transparent !important;
             border: 1px solid rgba(255, 255, 255, 0.3) !important;
             color: rgb(126, 217, 87) !important;
             -webkit-text-fill-color: rgb(126, 217, 87) !important;
@@ -62,7 +62,7 @@
         textarea.form-input:focus {
             outline: none !important;
             box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5) !important;
-            background-color: rgba(255, 255, 255, 0.15) !important;
+            background-color: rgba(255, 255, 255, 0.05) !important;
             color: rgb(126, 217, 87) !important;
             -webkit-text-fill-color: rgb(126, 217, 87) !important;
         }
@@ -89,10 +89,10 @@
         input:-webkit-autofill:hover,
         input:-webkit-autofill:focus,
         input:-webkit-autofill:active {
-            -webkit-text-fill-color: rgba(255, 255, 255, 0.9) !important;
-            -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.1) inset !important;
-            box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.1) inset !important;
-            color: rgba(255, 255, 255, 0.9) !important;
+            -webkit-text-fill-color: rgb(126, 217, 87) !important;
+            -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+            box-shadow: 0 0 0px 1000px transparent inset !important;
+            color: rgb(126, 217, 87) !important;
         }
 
         .form-input::placeholder {
@@ -989,9 +989,11 @@
                     
                     if (!response.ok) {
                         let errorMessage = `HTTP error! status: ${response.status}`;
+                        let errorDetails = '';
                         try {
                             const errorData = await response.json();
                             errorMessage = errorData.message || errorData.title || errorMessage;
+                            errorDetails = errorData.error || '';
                             // If it's a validation error, show all errors
                             if (errorData.errors) {
                                 const validationErrors = Object.values(errorData.errors).flat().join(', ');
@@ -1000,9 +1002,18 @@
                         } catch (e) {
                             // If response is not JSON, try to get text
                             const text = await response.text().catch(() => '');
-                            if (text) errorMessage = text;
+                            if (text) {
+                                errorMessage = text;
+                                errorDetails = text;
+                            }
                         }
-                        throw new Error(errorMessage);
+                        console.error('Booking API Error Details:', {
+                            status: response.status,
+                            message: errorMessage,
+                            details: errorDetails,
+                            bookingData: bookingData
+                        });
+                        throw new Error(errorMessage + (errorDetails ? `\nDetails: ${errorDetails}` : ''));
                     }
                     
                     const result = await response.json();
