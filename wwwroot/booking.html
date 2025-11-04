@@ -324,10 +324,23 @@
             
             console.log('Total images to display:', images.length, images);
             
+            // Helper function to check if URL is valid for web display
+            function isValidWebUrl(url) {
+                if (!url) return false;
+                // Check if it's a data URI (base64)
+                if (url.startsWith('data:image/')) return true;
+                // Check if it's an HTTP/HTTPS URL
+                if (url.startsWith('http://') || url.startsWith('https://')) return true;
+                // Check if it's a relative URL
+                if (url.startsWith('/')) return true;
+                // Local file paths won't work in browser
+                return false;
+            }
+            
             // Display images (3 images: main in center, 1 on left, 1 on right - skipping image 2)
             // Main image in center
             const mainImage = document.getElementById('unit-image-main');
-            if (mainImage && images[0]) {
+            if (mainImage && images[0] && isValidWebUrl(images[0])) {
                 mainImage.src = images[0];
                 mainImage.style.display = 'block';
                 mainImage.onerror = function() { 
@@ -335,13 +348,15 @@
                     this.style.display = 'none'; 
                 };
                 mainImage.onload = function() {
-                    console.log('Main image loaded successfully');
+                    console.log('Main image loaded successfully:', images[0]);
                 };
+            } else if (mainImage && images[0]) {
+                console.warn('Main image URL is not web-accessible (local file path):', images[0]);
             }
             
             // Small images: left side (image 1) and right side (image 3) - skip image 2
             const image1 = document.getElementById('unit-image-1');
-            if (image1 && images[1]) {
+            if (image1 && images[1] && isValidWebUrl(images[1])) {
                 image1.src = images[1];
                 image1.style.display = 'block';
                 image1.onerror = function() { 
@@ -349,12 +364,14 @@
                     this.style.display = 'none'; 
                 };
                 image1.onload = function() {
-                    console.log('Image 1 loaded successfully');
+                    console.log('Image 1 loaded successfully:', images[1]);
                 };
+            } else if (image1 && images[1]) {
+                console.warn('Image 1 URL is not web-accessible (local file path):', images[1]);
             }
             
             const image3 = document.getElementById('unit-image-3');
-            if (image3 && images[2]) {
+            if (image3 && images[2] && isValidWebUrl(images[2])) {
                 image3.src = images[2];
                 image3.style.display = 'block';
                 image3.onerror = function() { 
@@ -362,8 +379,10 @@
                     this.style.display = 'none'; 
                 };
                 image3.onload = function() {
-                    console.log('Image 3 loaded successfully');
+                    console.log('Image 3 loaded successfully:', images[2]);
                 };
+            } else if (image3 && images[2]) {
+                console.warn('Image 3 URL is not web-accessible (local file path):', images[2]);
             }
             
             // Show the unit overview section
