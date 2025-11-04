@@ -146,8 +146,13 @@ namespace CondoSystem.Services
                 // Add timeout to prevent hanging (30 seconds)
                 client.Timeout = 30000;
                 
-                System.Console.WriteLine($"Connecting to {smtpHost}:{smtpPort}...");
-                await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
+                // Try SSL (port 465) or STARTTLS (port 587) based on port
+                SecureSocketOptions socketOptions = smtpPort == 465 
+                    ? SecureSocketOptions.SslOnConnect 
+                    : SecureSocketOptions.StartTls;
+                
+                System.Console.WriteLine($"Connecting to {smtpHost}:{smtpPort} using {socketOptions}...");
+                await client.ConnectAsync(smtpHost, smtpPort, socketOptions);
                 System.Console.WriteLine("SMTP connection established.");
                 
                 System.Console.WriteLine("Authenticating...");
