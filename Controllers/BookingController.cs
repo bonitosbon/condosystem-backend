@@ -65,16 +65,23 @@ namespace CondoSystem.Controllers
                 if (dto.GuestCount > condo.MaxGuests)
                     return BadRequest(new { message = $"Maximum {condo.MaxGuests} guests allowed for this condo." });
 
+                // Limit PaymentImageUrl size to prevent database issues (PostgreSQL text can be large, but let's be safe)
+                string paymentImageUrl = dto.PaymentImageUrl;
+                if (!string.IsNullOrEmpty(paymentImageUrl) && paymentImageUrl.Length > 5000000) // 5MB limit
+                {
+                    return BadRequest(new { message = "Payment image is too large. Please use a smaller image (under 5MB)." });
+                }
+
                 var booking = new Booking
                 {
-                    FullName = dto.FullName,
-                    Email = dto.Email,
-                    Contact = dto.Contact,
+                    FullName = dto.FullName ?? string.Empty,
+                    Email = dto.Email ?? string.Empty,
+                    Contact = dto.Contact ?? string.Empty,
                     GuestCount = dto.GuestCount,
                     StartDateTime = dto.StartDateTime,
                     EndDateTime = dto.EndDateTime,
                     Notes = dto.Notes,
-                    PaymentImageUrl = dto.PaymentImageUrl,
+                    PaymentImageUrl = paymentImageUrl,
                     CondoId = dto.CondoId,
                     Status = "PendingApproval"
                 };

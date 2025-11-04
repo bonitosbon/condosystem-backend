@@ -3,6 +3,9 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
     <title>Regalia - Guest Booking</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -953,9 +956,51 @@
                 let paymentImageBase64 = null;
                 const paymentFile = fileUpload.files[0];
                 if (paymentFile) {
+                    // Check file size (limit to 2MB to avoid database issues)
+                    const maxSize = 2 * 1024 * 1024; // 2MB
+                    if (paymentFile.size > maxSize) {
+                        alert('Payment image is too large. Please use an image smaller than 2MB.');
+                        submitBtn.disabled = false;
+                        loadingSpinner.classList.remove('show');
+                        submitText.textContent = 'Submit Booking';
+                        return;
+                    }
+                    
                     paymentImageBase64 = await new Promise((resolve, reject) => {
                         const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result); // This is already a data URL (base64)
+                        reader.onload = (e) => {
+                            let base64 = e.target.result;
+                            // If base64 is still too long (over 1MB), compress it
+                            if (base64.length > 1000000) {
+                                // Compress by reducing quality
+                                const img = new Image();
+                                img.onload = function() {
+                                    const canvas = document.createElement('canvas');
+                                    const ctx = canvas.getContext('2d');
+                                    // Calculate new dimensions to reduce size
+                                    let width = img.width;
+                                    let height = img.height;
+                                    const maxDimension = 1200;
+                                    if (width > maxDimension || height > maxDimension) {
+                                        if (width > height) {
+                                            height = (height / width) * maxDimension;
+                                            width = maxDimension;
+                                        } else {
+                                            width = (width / height) * maxDimension;
+                                            height = maxDimension;
+                                        }
+                                    }
+                                    canvas.width = width;
+                                    canvas.height = height;
+                                    ctx.drawImage(img, 0, 0, width, height);
+                                    resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% quality
+                                };
+                                img.onerror = reject;
+                                img.src = base64;
+                            } else {
+                                resolve(base64);
+                            }
+                        };
                         reader.onerror = reject;
                         reader.readAsDataURL(paymentFile);
                     });
@@ -1039,9 +1084,20 @@
                     if (error.message) {
                         errorMessage = `Error: ${error.message}`;
                     }
+                    // Try to get more details from the error
+                    if (error.response) {
+                        try {
+                            const errorData = await error.response.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch (e) {
+                            // Ignore JSON parse errors
+                        }
+                    }
                     alert(errorMessage);
                     console.error('Booking submission error:', error);
+                    console.error('Error stack:', error.stack);
                     console.error('Booking data sent:', bookingData);
+                    console.error('Payment image length:', paymentImageBase64 ? paymentImageBase64.length : 0);
                 } finally {
                     submitBtn.disabled = false;
                     loadingSpinner.classList.remove('show');
