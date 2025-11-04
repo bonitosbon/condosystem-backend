@@ -72,14 +72,35 @@ namespace CondoSystem.Controllers
                     return BadRequest(new { message = "Payment image is too large. Please use a smaller image (under 5MB)." });
                 }
 
+                // Convert DateTime to UTC (PostgreSQL requires UTC for timestamp with time zone)
+                DateTime startDateTime = dto.StartDateTime;
+                if (startDateTime.Kind == DateTimeKind.Unspecified)
+                {
+                    startDateTime = DateTime.SpecifyKind(startDateTime, DateTimeKind.Utc);
+                }
+                else if (startDateTime.Kind == DateTimeKind.Local)
+                {
+                    startDateTime = startDateTime.ToUniversalTime();
+                }
+
+                DateTime endDateTime = dto.EndDateTime;
+                if (endDateTime.Kind == DateTimeKind.Unspecified)
+                {
+                    endDateTime = DateTime.SpecifyKind(endDateTime, DateTimeKind.Utc);
+                }
+                else if (endDateTime.Kind == DateTimeKind.Local)
+                {
+                    endDateTime = endDateTime.ToUniversalTime();
+                }
+
                 var booking = new Booking
                 {
                     FullName = dto.FullName ?? string.Empty,
                     Email = dto.Email ?? string.Empty,
                     Contact = dto.Contact ?? string.Empty,
                     GuestCount = dto.GuestCount,
-                    StartDateTime = dto.StartDateTime,
-                    EndDateTime = dto.EndDateTime,
+                    StartDateTime = startDateTime,
+                    EndDateTime = endDateTime,
                     Notes = dto.Notes,
                     PaymentImageUrl = paymentImageUrl,
                     CondoId = dto.CondoId,
